@@ -1,0 +1,905 @@
+import React, { useState, useMemo } from "react";
+
+/* ============================================================
+   PIT WALL — Selector de configuración del rig
+   Hardware: Pedales VRS Pro (resorte azul/rojo) · Fanatec
+   Volantes: Redondo+Rally Module · McLaren GT3 · Formula V2.5+APM
+   Palanca Fanatec H/secuencial
+   Listas: iRacing 2026 S3 · AC EVO v0.7 (junio 2026)
+   ============================================================ */
+
+// ---- Códigos de transmisión ----
+// L = levas · S = secuencial (palanca) · H = palanca en H
+// HD = H dogleg · N = sin cambios / directo · A = automático
+
+const CATS = {
+  formula:   { label: "Fórmula",        w: "formula", s: "rojo", kg: "110–140" },
+  proto:     { label: "Prototipos",     w: "formula", s: "rojo", kg: "100–130" },
+  gt3:       { label: "GT3",            w: "mclaren", s: "rojo", kg: "85–110" },
+  gt4:       { label: "GT4",            w: "mclaren", s: "rojo", kg: "75–100" },
+  gte:       { label: "GTE",            w: "mclaren", s: "rojo", kg: "90–120" },
+  gt2:       { label: "GT2",            w: "mclaren", s: "rojo", kg: "90–120" },
+  gt1:       { label: "GT1 / clásicos GT", w: "mclaren", s: "rojo", kg: "90–120" },
+  copa:      { label: "Copas monomarca",w: "mclaren", s: "rojo", kg: "85–110" },
+  tcr:       { label: "TCR / Turismos", w: "mclaren", s: "azul", kg: "55–70" },
+  supercars: { label: "Supercars / Stock Car", w: "redondo", s: "rojo", kg: "90–120" },
+  calle:     { label: "Calle",          w: "redondo", s: "azul", kg: "60–70" },
+  hiper:     { label: "Superdeportivos",w: "mclaren", s: "azul", kg: "55–70" },
+  clasico:   { label: "Clásicos",       w: "redondo", s: "azul", kg: "55–70" },
+  rally:     { label: "Rally / Rallycross", w: "redondo", s: "azul", kg: "60–70" },
+  nascar:    { label: "NASCAR / Óvalo", w: "redondo", s: "azul", kg: "45–60" },
+  dirt:      { label: "Dirt Oval",      w: "redondo", s: "azul", kg: "35–50" },
+  offroad:   { label: "Off-Road",       w: "redondo", s: "azul", kg: "50–65" },
+};
+
+// c(nombre, cat, año, trans, info, overrides?)
+const c = (n, cat, y, t, i, o) => ({ n, cat, y, t, i, ...(o || {}) });
+
+const IRACING = [
+  // ---------- FÓRMULA ----------
+  c("Mercedes-AMG W13 E Performance", "formula", 2022, "L", "F1 era efecto suelo. Híbrido, ~1000 CV. Frenada brutal y gestión de ERS."),
+  c("Mercedes-AMG W12", "formula", 2021, "L", "F1 de la era híbrida previa al efecto suelo. Carga aerodinámica máxima."),
+  c("McLaren MP4-30", "formula", 2015, "L", "F1 híbrido Honda. Difícil de frenar en el límite, muy sensible."),
+  c("Super Formula SF23 (Toyota / Honda)", "formula", 2023, "L", "La fórmula más rápida fuera de F1. Dos motorizaciones, downforce enorme."),
+  c("Super Formula Lights", "formula", 2023, "L", "Antesala de la Super Formula. Ágil y exigente en frenada."),
+  c("Dallara IR18 (IndyCar)", "formula", 2018, "L", "IndyCar actual. Óvalos y circuitos; sin servo de frenos: pierna fuerte.", { notas: ["En óvalos casi no se frena; en circuito la frenada es muy dura y sin ABS."] }),
+  c("Dallara F3", "formula", 2019, "L", "FIA F3. Equilibrado, ideal para aprender monoplazas con carga."),
+  c("FIA F4", "formula", 2016, "L", "Monoplaza de iniciación con levas. Poca carga, muy didáctico."),
+  c("Formula iR-04", "formula", 2020, "L", "Fórmula ficticio estilo GP3/F3. Gran escuela de monoplazas."),
+  c("Formula iR-01", "formula", 1991, "L", "Inspirado en la F1 de inicios de los 90, pero con secuencial semiautomático de 7 velocidades."),
+  c("Dallara IL-15 (Indy NXT)", "formula", 2015, "L", "El monoplaza de Indy NXT, último escalón antes de IndyCar."),
+  c("Formula Renault 2.0", "formula", 2014, "L", "Fórmula de promoción europeo: poca carga, mucha escuela de frenada."),
+  c("Formula Renault 3.5", "formula", 2014, "L", "530 CV y DRS: casi un F1 de su época."),
+  c("Dallara DW12 / IR-05 (Legacy)", "formula", 2012, "L", "Los IndyCar antiguos de iRacing, hoy contenido legacy."),
+  c("Indy Pro 2000 PM-18", "formula", 2018, "L", "Escalón del Road to Indy. Secuencial con levas."),
+  c("Formula Vee", "formula", 1963, "H", "Monoplaza histórico de iniciación. 4 velocidades en H.", { w: "redondo", s: "azul" }),
+  c("Formula Vee Cutlass (nuevo 2026 S3)", "formula", 2026, "H", "Nueva variante del Vee añadida en la Season 3 2026.", { w: "redondo", s: "azul" }),
+  c("Formula Vee Conqueror (nuevo 2026 S3)", "formula", 2026, "H", "Segunda variante nueva del Vee de la Season 3 2026.", { w: "redondo", s: "azul" }),
+  c("Skip Barber Formula 2000", "formula", 2000, "S", "El clásico de escuela: secuencial de palanca de 5, sin corte. Lift al subir y blip al bajar.", { s: "azul" }),
+  c("Ray FF1600", "formula", 2019, "H", "Formula Ford: sin alas, todo mecánica. 4 velocidades en H.", { w: "redondo", s: "azul" }),
+  c("Lotus 79", "clasico", 1978, "H", "F1 de efecto suelo original. 5 velocidades en H, neumáticos delicados.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
+  c("Lotus 49", "clasico", 1967, "H", "F1 clásico puro: potencia sobrada y cero ayudas. H + embrague siempre."),
+
+  // ---------- PROTOTIPOS ----------
+  c("BMW M Hybrid V8 (GTP) — Evo 2026", "proto", 2023, "L", "GTP/LMDh híbrido. Refresco Evo gratuito en la Season 3 2026."),
+  c("Porsche 963 GTP", "proto", 2023, "L", "LMDh de Porsche. Gestión de híbrido y tráfico multiclase."),
+  c("Cadillac V-Series.R GTP", "proto", 2023, "L", "LMDh con V8 atmosférico. Sonido único en la categoría."),
+  c("Acura ARX-06 GTP", "proto", 2023, "L", "LMDh de Acura/HPD para IMSA."),
+  c("Ferrari 499P", "proto", 2023, "L", "Hypercar LMH ganador de Le Mans."),
+  c("Dallara P217 LMP2", "proto", 2017, "L", "LMP2: rápido, fiable y la puerta de entrada a resistencia."),
+  c("Ligier JS P320 (LMP3)", "proto", 2020, "L", "LMP3: prototipo de acceso, V8 atmosférico sin híbrido."),
+  c("HPD ARX-01c", "proto", 2010, "L", "LMP2 clásico de la era ALMS."),
+  c("Audi R18", "proto", 2016, "L", "LMP1 híbrido diésel. Frenada eléctrica + carga descomunal."),
+  c("Porsche 919 Hybrid", "proto", 2017, "L", "LMP1 híbrido: el prototipo más complejo de gestionar."),
+  c("Radical SR8", "proto", 2009, "S", "Biplaza radical con motor de moto. Secuencial que premia la palanca.", { notas: ["Cambio derivado de moto: la palanca secuencial es lo más inmersivo."] }),
+  c("Radical SR10", "proto", 2020, "L", "Evolución turbo del Radical con levas."),
+  c("Riley MkXX Daytona Prototype (Legacy)", "proto", 2008, "S", "DP de la era Grand-Am. Secuencial de palanca."),
+  c("Chevrolet Corvette C7 Daytona Prototype (Legacy)", "proto", 2014, "L", "El último DP antes de la era DPi."),
+  c("Nissan GTP ZX-Turbo", "clasico", 1990, "H", "Prototipo IMSA GTP histórico: turbo brutal y cambio en H.", { s: "rojo" }),
+
+  // ---------- GT3 ----------
+  c("Ferrari 296 GT3", "gt3", 2023, "L", "GT3 actual de Ferrari, V6 biturbo. Actualización de clase en 2026 S3."),
+  c("BMW M4 GT3 Evo", "gt3", 2025, "L", "La evolución del M4 GT3, referencia de la clase."),
+  c("Porsche 911 GT3 R (992)", "gt3", 2023, "L", "GT3 de motor trasero: tracción única en salida de curva."),
+  c("Mercedes-AMG GT3 2020", "gt3", 2020, "L", "V8 atmosférico delantero, muy estable y noble."),
+  c("Audi R8 LMS EVO II", "gt3", 2022, "L", "V10 central atmosférico, muy progresivo."),
+  c("Lamborghini Huracán GT3 EVO", "gt3", 2019, "L", "GT3 agresivo de tren delantero afilado."),
+  c("McLaren 720S GT3 EVO", "gt3", 2023, "L", "Carbono y aero eficiente. Tu volante McLaren es literalmente el suyo.", { notas: ["El McLaren GT3 V2 es la réplica del volante real de este coche: combinación perfecta."] }),
+  c("Ford Mustang GT3", "gt3", 2024, "L", "V8 de 5.4L. Nuevo GT3 americano."),
+  c("Chevrolet Corvette Z06 GT3.R", "gt3", 2024, "L", "GT3 del Corvette de motor central."),
+  c("Acura NSX GT3 EVO 22", "gt3", 2022, "L", "GT3 híbrido-no, biturbo central. Muy estable."),
+  c("Aston Martin Vantage GT3 EVO", "gt3", 2024, "L", "El GT3 británico actual, V8 AMG biturbo."),
+  c("GT3 Legacy (BMW Z4 / Audi R8 / Ferrari 488 / Mercedes AMG 2015)", "gt3", 2015, "L", "La generación GT3 anterior, disponible como contenido legacy a 2,95 $."),
+
+  // ---------- GT4 ----------
+  c("Aston Martin Vantage GT4", "gt4", 2019, "L", "GT4 británico equilibrado."),
+  c("BMW M4 GT4 (G82)", "gt4", 2023, "L", "GT4 moderno con mucha electrónica de ayuda."),
+  c("McLaren 570S GT4", "gt4", 2017, "L", "GT4 de carbono, frenos sin ABS de serie en iRacing."),
+  c("Mercedes-AMG GT4", "gt4", 2018, "L", "GT4 robusto basado en el AMG GT."),
+  c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 más popular: motor central, PDK con levas."),
+  c("Ford Mustang GT4", "gt4", 2017, "L", "El GT4 del Mustang, V8 con carácter."),
+
+  // ---------- GTE ----------
+  c("Ferrari 488 GTE", "gte", 2018, "L", "GTE: más carga y menos ayudas que un GT3."),
+  c("Porsche 911 RSR", "gte", 2019, "L", "GTE de motor central-trasero. Frenada feroz."),
+  c("Chevrolet Corvette C8.R", "gte", 2020, "L", "GTE americano de motor central."),
+  c("BMW M8 GTE", "gte", 2018, "L", "GTE grande y potente, exige frenadas largas y precisas."),
+  c("Ford GT (GTE)", "gte", 2017, "L", "El Ford GT de Le Mans 2016-2019."),
+
+  // ---------- GT1 / CLÁSICOS GT ----------
+  c("Aston Martin DBR9 GT1", "gt1", 2005, "S", "GT1 V12: bestia analógica con secuencial de palanca.", { notas: ["Cambio secuencial real de palanca: usa la Fanatec en modo secuencial."] }),
+  c("Chevrolet Corvette C6.R GT1", "gt1", 2006, "S", "GT1 americano V8. Secuencial de palanca, sin ayudas."),
+  c("Ford GT GT2/GT3 (Legacy)", "gt1", 2009, "L", "El Ford GT de carreras de la era pre-GTE, secuencial semiautomático."),
+  c("McLaren MP4-12C GT3", "gt3", 2012, "L", "GT3 clásico de McLaren, sin ABS ni TC modernos.", { s: "rojo" }),
+  c("Audi 90 GTO", "clasico", 1989, "H", "IMSA GTO: quattro turbo de 720 CV y cambio en H. Salvaje.", { s: "rojo" }),
+
+  // ---------- COPAS ----------
+  c("Porsche 911 GT3 Cup (992.2)", "copa", 2025, "L", "La copa por excelencia. Sin ABS ni TC: frenada quirúrgica.", { notas: ["Sin ABS: el resorte rojo ayuda a dosificar con presión, no con recorrido."] }),
+  c("Ferrari 296 Challenge", "copa", 2024, "L", "La copa monomarca de Ferrari: V6 biturbo de 700 CV con ABS Evo de competición."),
+  c("Global Mazda MX-5 Cup", "copa", 2025, "S", "El MX-5 Cup actual: caja secuencial de competición con palanca.", { w: "redondo", s: "azul", notas: ["Palanca Fanatec en modo secuencial: tirón seco sin embrague en marcha."] }),
+  c("Mazda MX-5 Cup (legacy)", "copa", 2015, "H", "La versión clásica del coche-escuela: 6 velocidades en H y embrague.", { w: "redondo", s: "azul" }),
+  c("Toyota GR86 Cup", "copa", 2022, "L", "Copa de iniciación moderna: secuencial SADEV de 6 con levas.", { s: "azul" }),
+  c("BMW M2 CS Racing", "copa", 2020, "L", "Turismo de copa con DCT y levas. Muy noble.", { s: "azul" }),
+  c("BMW M2 Racing (G87) — NUEVO y GRATIS", "copa", 2026, "L", "Novedad de la Season 3 2026, contenido base gratuito. 313 CV, DCT.", { s: "azul" }),
+
+  // ---------- TCR / TURISMOS ----------
+  c("Renault Clio R.S. V Cup", "tcr", 2023, "L", "El Clio Cup de quinta generación: 200 CV, FWD y caja de garras secuencial.", { notas: ["Cambio secuencial accionado por levas, como en el coche real de la Clio Cup."] }),
+  c("Audi RS 3 LMS Gen2 TCR", "tcr", 2021, "L", "TCR alemán: tracción delantera y levas (la versión Gen1 queda como legacy)."),
+  c("Honda Civic Type R TCR", "tcr", 2018, "L", "TCR ágil, referencia de la clase."),
+  c("Hyundai Elantra N TCR", "tcr", 2021, "L", "TCR moderno de Hyundai."),
+  c("Hyundai Veloster N TCR", "tcr", 2019, "L", "El otro TCR de Hyundai, algo más corto de batalla."),
+  c("Stock Car Brasil (Cruze / Corolla)", "supercars", 2023, "L", "Stock Car Pro Series brasileño: V8 con levas y push-to-pass.", { w: "mclaren" }),
+  c("Ford Mustang GT Supercar (Gen3)", "supercars", 2023, "S", "Supercars australiano: V8 y secuencial de palanca. Físico y agresivo.", { notas: ["La palanca secuencial es parte de la experiencia Supercars: cambia con fuerza."] }),
+  c("Chevrolet Camaro Supercar (Gen3)", "supercars", 2023, "S", "El rival del Mustang en Supercars. Mismo placer de palanca."),
+  c("V8 Supercar Ford Falcon FG / Holden VF Commodore (Legacy)", "supercars", 2014, "S", "La generación anterior de Supercars, hoy contenido legacy."),
+  c("Caterham Seven Academy", "calle", 2022, "H", "El mismo Seven de academia que en AC EVO: H, embrague y muñecas finas.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
+  c("SCCA Spec Racer Ford Gen3", "calle", 2015, "S", "Biplaza de club lento pero táctico: secuencial de garras de 6."),
+  c("Cadillac CTS-V Racecar", "tcr", 2011, "S", "Sedán de carreras V8 con secuencial de garras de 6.", { w: "redondo" }),
+  c("Kia Optima", "tcr", 2013, "S", "Turismo de carreras coreano con secuencial de garras.", { w: "redondo" }),
+  c("Ford Mustang FR500S", "calle", 2008, "H", "Mustang de copa con H y V8."),
+  c("Pontiac Solstice", "calle", 2006, "H", "Roadster rookie de iRacing. Ideal para empezar."),
+  c("VW Jetta TDI Cup", "calle", 2009, "L", "Copa diésel con DSG: cambia con levas.", { w: "redondo" }),
+
+  // ---------- NASCAR ----------
+  c("NASCAR Next Gen — Chevrolet Camaro ZL1", "nascar", 2022, "S", "Cup Series actual: secuencial de 5 marchas con palanca.", { notas: ["En óvalos apenas se frena (azul perfecto); en rutero exige frenadas fuertes."] }),
+  c("NASCAR Next Gen — Ford Mustang", "nascar", 2022, "S", "El Mustang de la Cup Series Next Gen."),
+  c("NASCAR Next Gen — Toyota Camry XSE", "nascar", 2024, "S", "El Camry actualizado de la Cup Series."),
+  c("EURO NASCAR V8GP — NUEVO", "nascar", 2026, "H", "Novedad 2026 S3: stock car europeo de 400 CV, 4 marchas en H."),
+  c("NASCAR Xfinity (Camaro / Mustang / Supra)", "nascar", 2019, "H", "Serie Xfinity: caja de 4 en H, estilo clásico NASCAR."),
+  c("NASCAR Trucks (Silverado / F-150 / Tundra / Ram)", "nascar", 2018, "H", "Camionetas NASCAR: H de 4 y mucho draft. El Ram llegó en 2026 con su regreso real a la serie."),
+  c("ARCA Menards (Toyota / Chevrolet / Ford)", "nascar", 2015, "H", "La antesala de NASCAR. H de 4 velocidades."),
+  c("NASCAR Legends 1987 (Monte Carlo / Thunderbird / LeSabre / Grand Prix)", "nascar", 1987, "H", "Los stock cars ochenteros: deslizan, derrapan y enamoran."),
+  c("NASCAR Cup Gen 6 (Legacy)", "nascar", 2019, "H", "La generación anterior de la Cup: H de 4 velocidades."),
+  c("Fury Race Cars SRX", "nascar", 2021, "H", "El coche de la Superstar Racing Experience: short track con estrellas."),
+  c("Sprint Car 410 (asfalto)", "nascar", 2016, "N", "Sprint car alado de asfalto: sin cambios, solo coraje.", { notas: ["Sin cambios que hacer: transmisión directa."] }),
+  c("USAC Silver Crown", "nascar", 2016, "S", "El clásico de óvalo USAC: caja de garras de 2 marchas."),
+  c("NASCAR Whelen Tour Modified — actualizado 2026 S3", "nascar", 2020, "H", "Refresco completo y neumáticos nuevos en la Season 3 2026."),
+  c("SK Modified — actualizado 2026 S3", "nascar", 2020, "H", "El modified de iniciación, también renovado en 2026 S3."),
+  c("Late Model Stock", "nascar", 2022, "H", "Short track puro del sureste de EE. UU."),
+  c("Super Late Model", "nascar", 2018, "H", "El rey del short track de asfalto."),
+  c("Street Stock", "nascar", 2010, "H", "El rookie de óvalo: básico y divertido."),
+  c("Legends Ford '34 Coupe", "nascar", 2015, "S", "Motor de moto Yamaha con caja secuencial: palanca corta y rabiosa."),
+
+  // ---------- DIRT OVAL ----------
+  c("Dirt Late Model (Limited / Pro / Super)", "dirt", 2017, "S", "Tierra y contravolante. Caja de 1 marcha: la corta solo sirve para arrancar."),
+  c("Dirt Sprint Car 410 / 360 / 305 (winged)", "dirt", 2017, "N", "Sin caja de cambios: transmisión directa. Todo es gas y volante.", { notas: ["Sin cambios que hacer: olvídate de palanca y levas, aquí mandan las manos."] }),
+  c("Dirt Sprint Car (non-winged)", "dirt", 2018, "N", "La versión sin alerón: aún más salvaje."),
+  c("Dirt Midget", "dirt", 2017, "N", "Pequeño, nervioso y directo: sin cambios."),
+  c("Dirt UMP Modified", "dirt", 2017, "S", "Modified de tierra de acceso. Caja de 1 marcha."),
+  c("Dirt Big Block Modified", "dirt", 2018, "S", "El monstruo de Nueva York: par infinito y 1 sola marcha."),
+  c("Dirt 358 Modified", "dirt", 2018, "S", "Hermano pequeño del Big Block. Caja de 1 marcha."),
+  c("Dirt Micro Sprint (winged / non-winged)", "dirt", 2021, "S", "Motor de moto 600cc con secuencial de 5 sin corte."),
+  c("Dirt Outlaw Micro Sprint (winged / non-winged)", "dirt", 2022, "S", "La versión más potente del micro, misma caja secuencial de 5."),
+  c("Dirt Mini Stock", "dirt", 2023, "H", "Cuatro cilindros de iniciación sobre tierra."),
+  c("Dirt Street Stock", "dirt", 2017, "H", "El rookie de la tierra. Ahora con IA (Dirt AI, 2026 S3)."),
+  c("Dirt Legends Ford '34 Coupe", "dirt", 2017, "S", "Legends sobre tierra, con IA desde la Season 3 2026."),
+
+  // ---------- RALLYCROSS / OFF-ROAD ----------
+  c("Volkswagen Beetle GRC", "rally", 2016, "S", "Rallycross: 600 CV, AWD y saltos. Secuencial de palanca.", { notas: ["Tu combinación rally: aro redondo + Rally Module + palanca secuencial."] }),
+  c("Ford Fiesta ST GRC", "rally", 2016, "S", "El tercer rallycross de iRacing: igual de bestia que el Beetle."),
+  c("Subaru WRX STI (Rallycross)", "rally", 2022, "S", "El Subaru de rallycross: launch control y left-foot braking."),
+  c("Lucas Oil Pro 2 Truck", "offroad", 2017, "S", "Camioneta off-road de 900 CV. Automático de 3 con palanca tipo Art Carr."),
+  c("Lucas Oil Pro 4 Truck", "offroad", 2017, "S", "La versión 4x4: brutal en saltos y baches. Automático de 3 con palanca."),
+  c("Pro 2 Lite Truck", "offroad", 2017, "S", "Versión de acceso al off-road. Automático de 3 con palanca."),
+];
+
+const ACEVO = [
+  // ---------- CALLE / HOT HATCH ----------
+  c("Abarth 695 Biposto", "calle", 2015, "H", "Hot hatch radical; en EVO puedes llevarlo con caja manual pura."),
+  c("Alfa Romeo Giulia GTAm", "calle", 2021, "L", "Berlina extrema de 540 CV con automático de levas.", { w: "mclaren" }),
+  c("Alfa Romeo Junior Elettrica 280 Veloce", "calle", 2024, "N", "Eléctrico compacto: sin cambios, una sola marcha."),
+  c("Alpine A110 S Aero Kit", "calle", 2023, "L", "Ligero, ágil y con DCT de levas. Joya de curvas.", { w: "mclaren" }),
+  c("Alpine A290 (concept)", "calle", 2024, "N", "Hot hatch eléctrico de Alpine: sin cambios."),
+  c("Audi RS 3 Sportback", "calle", 2023, "L", "5 cilindros y DSG: levas y torque vectoring.", { w: "mclaren" }),
+  c("Audi RS 6", "calle", 2022, "L", "El familiar de 600 CV. Automático con levas.", { w: "mclaren" }),
+  c("Honda S2000 (AP1)", "calle", 1999, "H", "9.000 rpm y un cambio manual legendario: palanca en H obligatoria."),
+  c("Hyundai i30 N Performance", "calle", 2021, "H", "Hot hatch manual (la variante Drive-N es automática con levas)."),
+  c("Lotus Emira First Edition", "calle", 2022, "H", "V6 manual (variantes Sports con automático y levas)."),
+  c("Lotus Exige V6 Cup (Serie 3)", "calle", 2013, "H", "Track toy purista: H, embrague y nada de ayudas."),
+  c("Mini John Cooper S MkVI (+ B16 / swap Honda)", "calle", 2004, "H", "Mini con swaps de motor disponibles. Manual en H."),
+  c("Toyota GR86", "calle", 2022, "H", "El RWD asequible por excelencia. Manual en H."),
+  c("Chevrolet Camaro ZL1 (+ 1LE)", "calle", 2018, "H", "Muscle car de 650 CV con manual de 6."),
+  c("VW Golf Mk8 GTI Clubsport", "calle", 2021, "L", "GTI con DSG: levas.", { w: "mclaren" }),
+  c("VW Golf Mk1 GTI", "clasico", 1976, "H", "El GTI original (en el juego desde la v0.5)."),
+  c("Caterham Seven Academy", "calle", 2022, "H", "Minimalismo absoluto: H, embrague y muñecas finas.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
+  c("Caterham Seven 485 CSR Final Edition", "calle", 2023, "H", "El Seven más rápido: misma receta, más potencia."),
+
+  // ---------- SUPERDEPORTIVOS ----------
+  c("Ferrari 296 GTB (+ Assetto Fiorano)", "hiper", 2022, "L", "Híbrido V6 de 830 CV, DCT con levas."),
+  c("Ferrari Daytona SP3", "hiper", 2022, "L", "V12 atmosférico Icona. Levas y sonido celestial."),
+  c("Ferrari Purosangue", "hiper", 2023, "L", "V12 y levas (anunciado para próximas versiones)."),
+  c("Lamborghini Huracán STO (+ Track Options)", "hiper", 2021, "L", "V10 atmosférico orientado a circuito. Levas."),
+  c("Dallara Stradale", "hiper", 2018, "L", "Barchetta de carbono con cambio robotizado de levas."),
+  c("BMW M4 CSL", "hiper", 2022, "L", "El M4 más radical, automático de levas.", { w: "mclaren" }),
+  c("BMW M8 Competition", "hiper", 2020, "L", "GT de 625 CV, automático con levas.", { w: "mclaren" }),
+  c("Mercedes-Benz AMG GT 63 (C192)", "hiper", 2024, "L", "Anunciado para próximas versiones."),
+
+  // ---------- CLÁSICOS ----------
+  c("Alfa Romeo 75 Turbo Evoluzione", "clasico", 1987, "H", "Berlina turbo homologación Grupo A. Transaxle y H."),
+  c("Alfa Romeo Giulia Sprint GTA", "clasico", 1965, "H", "El Alfa de carreras de los 60: ligero y deslizante."),
+  c("Audi Sport quattro", "rally", 1983, "H", "El icono del Grupo B en versión calle: AWD, turbo y H.", { notas: ["Aro redondo + Rally Module: la combinación natural para un quattro."] }),
+  c("BMW M3 E30 Sport Evolution", "clasico", 1990, "HD", "El M3 original en su versión más afilada. Caja dogleg.", { notas: ["Caja dogleg: 1ª abajo a la izquierda. Pruébalo así en la palanca, es parte del encanto."] }),
+  c("BMW M3 E46 CSL", "clasico", 2003, "L", "SMG secuencial robotizado: se lleva con levas.", { w: "mclaren" }),
+  c("Datsun 240Z (nuevo v0.7)", "clasico", 1971, "H", "Recién llegado en la actualización 0.7, en dos variantes."),
+  c("Ferrari 288 GTO", "clasico", 1984, "HD", "Biturbo ochentero con caja dogleg abierta. Respeto."),
+  c("Ferrari F40 LM", "clasico", 1989, "H", "El F40 de competición: turbo lag, cero ayudas y frenada de carreras.", { s: "rojo", notas: ["Punta-tacón con resorte duro: más fácil de lo que parece, porque el pie no se hunde y frenas por presión. Ajusta la altura de las caras de los pedales VRS para que gas y freno cargado queden a nivel."] }),
+  c("Honda NSX-R (NA1)", "clasico", 1992, "H", "El superdeportivo analógico perfecto. H + embrague."),
+  c("Lamborghini Countach LP5000 QV", "clasico", 1985, "HD", "Pesado, intimidante, dogleg. Una experiencia, no un coche."),
+  c("Lancia Delta HF Integrale Evo II (+ Evo 3 proto)", "rally", 1993, "H", "El rey del Grupo A en calle. AWD y palanca en H.", { notas: ["Aro redondo + Rally Module: es un Lancia de rally, llévalo como tal."] }),
+  c("Mercedes-Benz 190E Evo II", "clasico", 1990, "HD", "El rival del E30 en DTM, versión calle. Caja dogleg."),
+  c("Mazda MX-5 (NA)", "clasico", 1989, "H", "El roadster que enseñó a conducir a una generación."),
+  c("Peugeot 205 T16", "rally", 1984, "H", "Grupo B de verdad: central, turbo y AWD. Respeto máximo.", { notas: ["Grupo B con Rally Module: gas con cuidado, el turbo entra de golpe."] }),
+  c("Porsche 911 Turbo 3.6 (964) (+ Power Package)", "clasico", 1993, "H", "El viudo-maker: turbo trasero y H de 5."),
+  c("Renault 5 GT Turbo (+ Raider)", "clasico", 1987, "H", "GTI francés turbo: ligero y pícaro."),
+  c("Ford Escort RS Cosworth", "rally", 1992, "H", "Icono de rally con alerón doble. AWD y H.", { notas: ["Otro clásico de rally: aro redondo + Rally Module."] }),
+  c("Toyota Supra MKIV RZ 3.0 Turbo", "clasico", 1997, "H", "El 2JZ. Manual de 6 en H."),
+  c("Toyota Supra MKIV Drift Tune", "clasico", 1997, "H", "Versión drift: contravolante rápido con el aro redondo.", { notas: ["Para drift, el aro redondo permite soltar y recoger el volante con naturalidad."] }),
+
+  // ---------- GT3 / GT4 / GT2 / COPAS ----------
+  c("Audi R8 LMS GT3 Evo II (nuevo v0.7)", "gt3", 2022, "L", "Añadido en la actualización 0.7 de junio 2026."),
+  c("BMW M4 GT3 Evo", "gt3", 2025, "L", "El GT3 de referencia, también en EVO."),
+  c("Ferrari 296 GT3", "gt3", 2023, "L", "El GT3 de Maranello."),
+  c("Ford Mustang GT3", "gt3", 2024, "L", "El nuevo GT3 americano."),
+  c("Porsche 911 GT3 R rennsport", "gt3", 2023, "L", "Edición especial sin restricciones de homologación: 620 CV."),
+  c("Audi R8 LMS GT4 Evo", "gt4", 2020, "L", "GT4 con base del R8 de calle."),
+  c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 de copa con PDK."),
+  c("Porsche 718 Cayman GT4 / GT4 RS (calle)", "calle", 2021, "H", "El GT4 de calle es manual; el RS lleva PDK con levas.", { notas: ["GT4 manual: palanca en H. GT4 RS: levas (PDK)."] }),
+  c("Maserati GT2 (MC20)", "gt2", 2023, "L", "GT2: más potencia que un GT3, menos carga. Físico."),
+  c("Mercedes-AMG GT2", "gt2", 2023, "L", "740 CV en modo push-to-pass. El GT más bruto de EVO."),
+  c("Porsche 911 GT2 RS Clubsport Evo", "gt2", 2019, "L", "Track car de copa con 700 CV."),
+  c("Porsche 935 (2018) (nuevo v0.7)", "gt2", 2018, "L", "Homenaje al Moby Dick sobre base GT2 RS. Añadido en v0.7."),
+  c("Porsche 911 GT3 Cup (992) — base / ABS / ABS+TC", "copa", 2021, "L", "Tres variantes de electrónica. La base, sin ABS, es la exigente.", { notas: ["En la variante base (sin ABS) el resorte rojo marca la diferencia en la dosificación."] }),
+  c("Ferrari 488 Challenge Evo", "copa", 2020, "L", "Copa Ferrari: rápido y con ABS de competición."),
+  c("Lamborghini Huracán Super Trofeo EVO 2", "copa", 2021, "L", "La copa de Lamborghini."),
+  c("BMW M2 CS Racing", "copa", 2020, "L", "El mismo turismo de copa que en iRacing: DCT y levas.", { s: "azul" }),
+  c("Mazda MX-5 ND Global Cup (manual / secuencial)", "copa", 2016, "H", "Dos variantes reales: manual en H o secuencial.", { w: "redondo", s: "azul", notas: ["Variante manual: palanca en H + embrague. Variante secuencial: palanca Fanatec en modo secuencial."] }),
+
+  // ---------- FÓRMULA / PROTO ----------
+  c("Ferrari F2004", "formula", 2004, "L", "El F1 V10 más icónico de la historia. 19.000 rpm."),
+  c("Ferrari SF-25", "formula", 2025, "L", "El F1 actual de Ferrari, con libreas de Miami, Canadá e Italia."),
+  c("Dallara EXP", "proto", 2021, "L", "Track car tipo prototipo de Dallara: carga real y levas."),
+];
+
+const ACRALLY = [
+  // Lista a v0.4 (abril 2026) — todos van con aro redondo + Rally Module
+  c("Citroën Xsara WRC", "rally", 2003, "S", "World Rally Car de la era Loeb: 300 CV, AWD y secuencial.", { notas: ["Frenada con pie izquierdo: el resorte azul te deja modular fino mientras mantienes gas."] }),
+  c("Hyundai i20 N Rally2", "rally", 2021, "S", "Rally2 actual: secuencial de 5 con palanca, AWD."),
+  c("Peugeot 208 Rally4", "rally", 2020, "S", "Rally4 de acceso: tracción delantera y secuencial de palanca."),
+  c("Peugeot 306 II Maxi Kit Car (nuevo v0.4)", "rally", 1998, "S", "F2 Kit Car: FWD atmosférico de más de 10.000 rpm. El mata-WRC del asfalto.", { notas: ["Reina en asfalto: frena tarde y deja que el tren delantero muerda."] }),
+  c("Subaru Impreza S3 Gr.A (nuevo v0.4)", "rally", 1993, "H", "El Impreza de Prodrive con el que McRae ganó su primer rally y el título del 95."),
+  c("Lancia Delta HF Integrale Evoluzione Gr.A", "rally", 1992, "H", "El rey del Grupo A: AWD, turbo y palanca en H."),
+  c("Lancia Rally 037 EVO 2 Gr.B", "rally", 1984, "H", "El último campeón de tracción trasera. Grupo B puro: supercargado y delicado.", { notas: ["Propulsión y turbo de golpe: dosifica el gas como si fuera de cristal."] }),
+  c("Lancia Stratos Gr.4", "rally", 1976, "HD", "V6 Ferrari central y batalla cortísima. Caja dogleg.", { notas: ["Nervioso al límite: manos rápidas con el aro redondo y mucho respeto en bajadas."] }),
+  c("Fiat 131 Abarth Gr.4", "rally", 1976, "H", "El clásico de Alén y Röhrl: propulsión y derrapadas largas."),
+  c("Fiat 124 Sport Abarth Rally 16V Gr.4", "rally", 1973, "H", "Spider de rally de los 70: ligero y dócil para aprender tierra."),
+  c("Alpine A110 1600 Gr.4 (añadido dic. 2025)", "rally", 1973, "H", "El primer campeón del mundial de rallies. Motor trasero y agilidad pura."),
+  c("Alfa Romeo GTA 1300 Junior Gr.2", "rally", 1972, "H", "Pequeño, cantarín y de paso por curva altísimo."),
+  c("Mini Cooper S Gr.2", "rally", 1964, "H", "El gigante pequeño de Montecarlo. FWD histórico."),
+  c("Škoda Fabia RS Rally2 (anunciado para 2026)", "rally", 2023, "S", "Confirmado por el estudio, aún no disponible en el acceso anticipado."),
+];
+
+const AMS2 = [
+  // Lista a v1.6.x (2026) — organizado por clases, como el propio juego
+  // ---------- FÓRMULA ----------
+  c("Formula Ultimate Gen2 (estilo F1 actual)", "formula", 2023, "L", "El tope de AMS2: efecto suelo, híbrido y DRS."),
+  c("Formula Ultimate Gen1 / Formula Reiza", "formula", 2019, "L", "F1 de la era híbrida pre-2022."),
+  c("Formula V10 Gen1 / Gen2 (estilo F1 2000-2001)", "formula", 2001, "L", "V10 a 18.000 rpm: la era dorada del sonido."),
+  c("Formula HiTech Gen1 / Gen2 (estilo F1 1995-98)", "formula", 1997, "L", "Semiautomáticos de mediados de los 90, con levas."),
+  c("Formula Classic Gen1-Gen3 (estilo F1 1986-1991)", "formula", 1988, "H", "Turbos y atmosféricos de finales de los 80: cambio en H y heroísmo.", { notas: ["Punta-tacón en cada reducción: aquí la palanca H + embrague VRS brilla."] }),
+  c("Formula Classic Gen4 (estilo F1 1993-94)", "formula", 1994, "H", "Transición: algunos modelos en H, otros ya semiautomáticos con levas.", { notas: ["Revisa el modelo concreto: los Model 3/4 llevan levas, los primeros van en H."] }),
+  c("Formula Retro Gen1-Gen3 (estilo F1 1974-1982)", "formula", 1978, "H", "Lotus 72E, Brabham BT44, McLaren M23 y los efecto-suelo del 82.", { w: "redondo", notas: ["Volantes pequeños y redondos en la época: el aro redondo es lo fiel."] }),
+  c("Formula Vintage Gen1 / Gen2 (estilo F1 1967-69)", "formula", 1968, "H", "Cigar cars: potencia sobrada, neumáticos diminutos.", { w: "redondo", s: "azul" }),
+  c("Formula USA Gen1 / Gen2 (CART 1995-1998)", "formula", 1996, "H", "La era CART en óvalos y ruteros: cambio en H secuencialmente rapidísimo."),
+  c("Formula USA Gen3 (CART 2000s)", "formula", 2000, "S", "La última generación CART, ya con secuencial."),
+  c("Formula V8 (estilo F1 2013)", "formula", 2013, "L", "V8 atmosféricos con DRS (Reiza ampliará la familia en 2026)."),
+  c("Formula 3 (F309 / F301)", "formula", 2009, "S", "F3 moderno: secuencial de palanca."),
+  c("Formula Inter", "formula", 1995, "S", "Estilo F3000: potencia bruta sin ayudas."),
+  c("Formula Trainer (+ Advanced)", "formula", 2020, "H", "El monoplaza-escuela de AMS2: H y embrague.", { w: "redondo", s: "azul" }),
+  c("Formula Vee / Fusca", "formula", 1970, "H", "El Vee brasileño: 4 marchas y derrape constante.", { w: "redondo", s: "azul" }),
+  c("Formula Dirt", "dirt", 2022, "H", "Monoplaza sobre tierra brasileña: contravolante puro.", { s: "azul" }),
+
+  // ---------- PROTOTIPOS ----------
+  c("LMDh (Porsche 963 / BMW M Hybrid / Cadillac / Acura / Lamborghini / Alpine)", "proto", 2024, "L", "La clase reina IMSA/WEC del Endurance Pack."),
+  c("LMP2 (Oreca 07)", "proto", 2017, "L", "El LMP2 de referencia mundial."),
+  c("P1 Gen1 / Gen2 (AJR, Sigma P1)", "proto", 2019, "L", "Prototipos brasileños de alta carga."),
+  c("P2 / P3 / P4 (MetalMoro, Roco, Sigma)", "proto", 2018, "L", "Las clases de acceso a prototipos, multiclase perfecto."),
+  c("Group C (Porsche 962C / Sauber-Mercedes C9 / Nissan R89C / Corvette GTP)", "clasico", 1989, "H", "La era dorada de Le Mans: 800+ CV, turbo y cambio en H.", { s: "rojo", notas: ["Caja en H con embrague: dosifica los cambios o romperás la transmisión."] }),
+
+  // ---------- GT ----------
+  c("GT3 Gen2 (992 GT3 R, M4 GT3, 296 GT3, Mustang GT3…)", "gt3", 2023, "L", "La generación GT3 actual del Endurance Pack."),
+  c("GT3 Gen1 (720S, AMG GT3 Evo, Huracán Evo2, R8 Evo II…)", "gt3", 2019, "L", "La generación GT3 anterior, plenamente vigente online."),
+  c("GT4 (Cayman CS, M4 GT4, 570S, AMG GT4, Camaro, Ginetta G55)", "gt4", 2019, "L", "La clase GT4 completa."),
+  c("GTE (911 RSR, M8 GTE, Corvette C8.R)", "gte", 2019, "L", "Los GTE de la era IMSA/WEC reciente."),
+  c("GT1 Classics (McLaren F1 GTR, Porsche 911 GT1, CLK LM)", "gt1", 1997, "S", "Los GT1 de Le Mans de los 90.", { notas: ["El F1 GTR de 1995 lleva H con embrague; los del 97-98 ya son secuenciales."] }),
+  c("Group A (190E Evo II, M3 E30 Sport Evo)", "clasico", 1991, "H", "El DTM clásico: H, embrague y peleas al milímetro."),
+  c("BMW M1 Procar", "clasico", 1980, "H", "La copa de los pilotos de F1 en 1979-80.", { s: "rojo" }),
+  c("Porsche Cup (911 GT3 Cup 992 / 991)", "copa", 2021, "L", "La copa Porsche en AMS2, sin ABS ni TC."),
+  c("Supercars pack (Valkyrie, Viper ACR, R8 V10, Maserati GT2 Stradale…)", "hiper", 2024, "L", "Los superdeportivos de calle del pack Supercars.", { notas: ["El Viper ACR es manual: para ese, palanca en H + embrague VRS."] }),
+  c("Ultima GTR (Race / Road)", "hiper", 2006, "H", "El track toy británico salvaje: H y cero ayudas.", { w: "redondo" }),
+  c("Caterham (Academy / Supersport / Superlight / 360R / 620R)", "calle", 2015, "H", "Toda la escalera Caterham, del Academy al 620R.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
+
+  // ---------- TURISMOS Y COPAS BRASILEÑAS ----------
+  c("Stock Car Pro Series Brasil (2019-2025)", "supercars", 2024, "L", "La categoría reina brasileña: V8, levas y push-to-pass.", { w: "mclaren" }),
+  c("Stock Car Omega 1999 / Copa Montana", "supercars", 1999, "H", "Los clásicos del Stock Car: H y músculo.", { w: "redondo", s: "azul" }),
+  c("Stock Cars americanos — 3 generaciones (update invierno 2025)", "nascar", 1987, "H", "Los stock cars estilo NASCAR añadidos junto a Pocono y Fontana.", { notas: ["Pensados para los óvalos del juego, con full-course yellows."] }),
+  c("Super V8", "supercars", 2018, "S", "El V8 Supercar ficticio de Reiza: secuencial de palanca y mucho físico."),
+  c("Super Tourers (DLC 2026)", "tcr", 1996, "S", "Los superturismos de los 90 anunciados para este año."),
+  c("TSI Cup (Polo / Virtus)", "tcr", 2021, "S", "Copa monomarca VW brasileña."),
+  c("Sprint Race", "tcr", 2020, "S", "Silueta brasileña de iniciación, secuencial."),
+  c("Lancer Cup (R / RS)", "tcr", 2015, "H", "Copa Mitsubishi: manual en H.", { w: "redondo" }),
+  c("Mini Challenge JCW", "tcr", 2020, "S", "El Mini de copa británico."),
+  c("Copa Classic / Hot Cars / Copa Uno / Copa Fusca", "clasico", 1985, "H", "Los turismos clásicos brasileños: Fusca, Gol, Passat, Chevette, Opala y compañía. Puro cuerpo a cuerpo."),
+  c("Old Stock Race (Opala)", "clasico", 1979, "H", "El Opala de carreras: deslizante y carismático."),
+  c("Copa Truck", "supercars", 2020, "H", "Camiones de carreras: 1.200 CV de par y frenadas eternas.", { w: "redondo", s: "azul" }),
+
+  // ---------- KARTS ----------
+  c("Karts (Rental / GX390 / Race / Superkart 125 Shifter)", "calle", 2020, "N", "Del rental al Superkart de 250 km/h.", { notas: ["El Shifter/Superkart cambia con palanca secuencial; el resto no tiene cambios.", "Aro redondo y brazos firmes: el kart es el FFB más violento del juego."] }),
+];
+
+// ---------- Cajas de cambios de iRacing (artículo oficial de soporte) ----------
+const GBS = {
+  semiAuto: {
+    t: "Secuencial semiautomático",
+    lever: "Levas o palanca secuencial",
+    up: "A fondo: sin levantar el gas y sin embrague. Suelta la leva cuando engrane.",
+    down: "Sin embrague ni blip: la marcha no entra hasta que las RPM cuadran.",
+    extra: "Embrague solo para arrancar desde parado (salvo que el anti-stall esté activo).",
+  },
+  dct: {
+    t: "Doble embrague (DCT) — cambio manual",
+    lever: "Levas",
+    up: "Sin levantar el gas y sin embrague.",
+    down: "Sin embrague ni blip.",
+    extra: "El coche real no tiene pedal de embrague.",
+  },
+  dogSeqCut: {
+    t: "Secuencial de garras — con corte de encendido",
+    lever: "Palanca secuencial",
+    up: "A fondo: el corte hace el trabajo. Sin embrague.",
+    down: "Sin embrague, pero con blip: punta-tacón o freno con pie izquierdo + blip de gas.",
+    extra: "Suelta la palanca solo cuando la marcha haya engranado.",
+  },
+  dogSeqNoCut: {
+    t: "Secuencial de garras — sin corte",
+    lever: "Palanca secuencial",
+    up: "Levanta el gas al subir. Sin embrague si las RPM son correctas.",
+    down: "Sin embrague, blip obligatorio.",
+    extra: "",
+  },
+  dogH: {
+    t: "Caja de garras en H (dogbox)",
+    lever: "Palanca en H",
+    up: "Levanta el gas; sin embrague si las RPM son correctas.",
+    down: "Sin embrague, blip obligatorio (punta-tacón o pie izquierdo + blip).",
+    extra: "Puedes preseleccionar la marcha: el cambio entra al liberar carga con el lift o el blip.",
+  },
+  synchroH: {
+    t: "Sincronizada en H",
+    lever: "Palanca en H + embrague",
+    up: "Levanta el gas y pisa el embrague.",
+    down: "Embrague + lift, con blip opcional (recomendado).",
+    extra: "En iRacing el cambio no es instantáneo: mantén embrague y palanca hasta que la marcha engrane del todo, o quedarás en neutro.",
+  },
+  dog12: {
+    t: "Caja de garras de 1-2 marchas",
+    lever: "Palanca secuencial",
+    up: "Directo: sin embrague ni lift.",
+    down: "Directo: sin blip.",
+    extra: "La marcha corta solo sirve para arrancar; en carrera vas siempre en la larga.",
+  },
+  direct: {
+    t: "Transmisión directa",
+    lever: "Palanca secuencial (solo avance / reversa)",
+    up: "No hay cambios que hacer.",
+    down: "No hay cambios que hacer.",
+    extra: "El coche real no tiene ni embrague ni caja: se arranca empujado. iRacing lo modela como 1 marcha con reversa.",
+  },
+  autoMS: {
+    t: "Automático con cambio manual",
+    lever: "Palanca secuencial (o levas)",
+    up: "Sin lift ni embrague.",
+    down: "Sin blip.",
+    extra: "",
+  },
+};
+
+// Mapeo nombre → caja (los no listados caen al tipo por defecto de su cambio)
+const GB_MAP = [
+  ["Dirt Late Model", "dog12"], ["UMP", "dog12"], ["Big Block", "dog12"], ["358 Modified", "dog12"], ["Silver Crown", "dog12"],
+  ["Dirt Sprint", "direct"], ["Dirt Midget", "direct"], ["Sprint Car 410 (asfalto)", "direct"],
+  ["Micro Sprint", "dogSeqNoCut"], ["'34 Coupe", "dogSeqNoCut"], ["Next Gen", "dogSeqNoCut"], ["Skip Barber", "dogSeqNoCut"],
+  ["Pro 2", "autoMS"], ["Pro 4", "autoMS"],
+  ["Vantage GT4", "dct"], ["RS 3 LMS", "dct"], ["M2 CS Racing", "dct"], ["M2 Racing", "dct"], ["570S GT4", "dct"], ["Cayman GT4", "dct"], ["Jetta", "dct"], ["M4 GT4", "dct"],
+  ["DBR9", "dogSeqCut"], ["CTS-V", "dogSeqCut"], ["C6.R", "dogSeqCut"], ["Global Mazda", "dogSeqCut"], ["Kia", "dogSeqCut"], ["Radical SR8", "dogSeqCut"], ["Spec Racer", "dogSeqCut"], ["Supercar", "dogSeqCut"], ["Riley", "dogSeqCut"],
+  ["GRC", "semiAuto"], ["WRX", "semiAuto"],
+  ["Audi 90", "synchroH"], ["Formula Vee", "synchroH"], ["FR500S", "synchroH"], ["Mini Stock", "synchroH"], ["Solstice", "synchroH"], ["Street Stock", "synchroH"], ["SRX", "synchroH"], ["MX-5 Cup (legacy)", "synchroH"], ["Caterham", "synchroH"],
+];
+
+function gearboxOf(car) {
+  for (const [needle, key] of GB_MAP) if (car.n.includes(needle)) return GBS[key];
+  if (car.t === "L" || car.t === "A") return GBS.semiAuto;
+  if (car.t === "S") return GBS.dogSeqCut;
+  if (car.t === "N") return GBS.direct;
+  return GBS.dogH;
+}
+
+// ---------- Textos de recomendación ----------
+const WHEELS = {
+  redondo: {
+    nombre: "Aro redondo + Podium Rally Module",
+    porque: "Aro continuo para cruzar las manos: lo correcto en clásicos, rally, drift, óvalo y tierra.",
+  },
+  mclaren: {
+    nombre: "McLaren GT3 V2",
+    porque: "Formato GT con levas de cambio y de embrague: el volante natural para GT, copas y turismos modernos.",
+  },
+  formula: {
+    nombre: "Formula V2.5 + Advanced Podium Module",
+    porque: "Formato fórmula con levas de cambio, embrague y 2 levas extra: lo que pide un monoplaza o prototipo.",
+  },
+};
+
+const SHIFTS = {
+  L:  { txt: "Levas del volante", sub: "Deja la palanca Fanatec aparcada para este coche." },
+  S:  { txt: "Palanca Fanatec en modo secuencial", sub: "Tirón atrás para subir, empujón para bajar. Sin embrague en marcha." },
+  H:  { txt: "Palanca Fanatec en H + embrague VRS", sub: "Cambio completo con el pedal de embrague de los VRS." },
+  HD: { txt: "Palanca Fanatec en H (patrón dogleg) + embrague VRS", sub: "1ª abajo-izquierda: replica el patrón en tu cabeza aunque la palanca sea estándar." },
+  N:  { txt: "Sin cambios", sub: "Transmisión directa o marcha única: ni palanca ni levas." },
+  A:  { txt: "Automático (levas opcionales)", sub: "" },
+};
+
+const SPRINGS = {
+  rojo: {
+    nombre: "Resorte ROJO (duro)",
+    porque: "Frenadas de competición: con el muelle duro dosificas por presión, como en un coche real sin servo, y repites el punto de frenada con más consistencia.",
+  },
+  azul: {
+    nombre: "Resorte AZUL (blando)",
+    porque: "Más recorrido y modulación fina: ideal para coches de calle, clásicos sin ABS de neumático estrecho, tierra y óvalo, donde frenar es acariciar.",
+  },
+};
+
+function recomendar(car) {
+  const meta = CATS[car.cat];
+  const wheelKey = car.w || meta.w;
+  const springKey = car.s || meta.s;
+  const shift = SHIFTS[car.t];
+  const notas = [...(car.notas || [])];
+  // Fuerza máxima de pedal: la de la categoría, salvo que el resorte esté
+  // sobreescrito para este coche (entonces usamos un rango acorde al muelle)
+  const kg = car.kg || (springKey === meta.s ? meta.kg : springKey === "azul" ? "55–70" : "85–110");
+
+  if (car.t === "L") {
+    if (wheelKey === "formula")
+      notas.push("Salida parada: usa las levas de embrague del APM. Las 2 levas extra: asígnalas a control de tracción y reparto de frenada.");
+    else if (wheelKey === "mclaren")
+      notas.push("Salida parada: usa las levas de embrague del McLaren para clavar el launch.");
+  }
+  if ((car.t === "H" || car.t === "HD") && wheelKey === "redondo")
+    notas.push("El Rally Module no tiene levas de embrague: el embrague va siempre en el pedal VRS, como debe ser en un manual.");
+  if (car.t === "S" && wheelKey === "redondo")
+    notas.push("Si un día no quieres palanca, las levas del Rally Module sirven; pero la palanca secuencial es más fiel.");
+
+  return { wheel: WHEELS[wheelKey], wheelKey, spring: SPRINGS[springKey], springKey, shift, notas, kg };
+}
+
+// ---------- Barra de fuerza de frenada (0–150 kg) ----------
+function PressureBar({ range, color }) {
+  const [lo, hi] = range.split("–").map(Number);
+  const MAX = 150;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
+        <div style={{
+          position: "absolute", left: `${(lo / MAX) * 100}%`, width: `${((hi - lo) / MAX) * 100}%`,
+          top: 0, bottom: 0, background: color, borderRadius: 4,
+        }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#6b7482", marginTop: 3 }}>
+        <span>0 kg</span><span>75</span><span>150 kg</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------- SVG: muelle del freno (firma visual) ----------
+function Spring({ color, dura }) {
+  const n = dura ? 7 : 5;
+  const h = 120, pad = 14;
+  const step = (h - pad * 2) / n;
+  let d = `M 30 ${pad}`;
+  for (let i = 0; i < n; i++) {
+    const y1 = pad + step * i + step / 2;
+    const y2 = pad + step * (i + 1);
+    d += ` Q ${i % 2 ? 6 : 54} ${y1} 30 ${y2}`;
+  }
+  return (
+    <svg width="60" height={h} viewBox={`0 0 60 ${h}`} aria-hidden="true">
+      <rect x="14" y="2" width="32" height="7" rx="2" fill="#3a4250" />
+      <rect x="14" y={h - 9} width="32" height="7" rx="2" fill="#3a4250" />
+      <path d={d} fill="none" stroke={color} strokeWidth={dura ? 7 : 5} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ---------- SVG: los tres volantes ----------
+function WheelIcon({ tipo, activo }) {
+  const col = activo ? "#F2B544" : "#4a5260";
+  const sw = activo ? 5 : 3.5;
+  return (
+    <svg width="64" height="64" viewBox="0 0 100 100" aria-hidden="true">
+      {tipo === "redondo" && (
+        <g stroke={col} strokeWidth={sw} fill="none">
+          <circle cx="50" cy="50" r="38" />
+          <circle cx="50" cy="50" r="9" fill={col} stroke="none" />
+          <path d="M50 41 V14 M42 53 L17 64 M58 53 L83 64" />
+        </g>
+      )}
+      {tipo === "mclaren" && (
+        <g stroke={col} strokeWidth={sw} fill="none">
+          <path d="M18 38 Q50 22 82 38 L86 60 Q70 76 50 76 Q30 76 14 60 Z" />
+          <rect x="40" y="44" width="20" height="14" rx="3" fill={col} stroke="none" />
+          <path d="M40 51 H22 M60 51 H78" />
+        </g>
+      )}
+      {tipo === "formula" && (
+        <g stroke={col} strokeWidth={sw} fill="none">
+          <path d="M16 34 H84 L88 52 Q72 70 50 70 Q28 70 12 52 Z" />
+          <rect x="40" y="40" width="20" height="14" rx="2" fill={col} stroke="none" />
+          <circle cx="26" cy="46" r="4" fill={col} stroke="none" />
+          <circle cx="74" cy="46" r="4" fill={col} stroke="none" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+const WHEEL_LABELS = { redondo: "Redondo + Rally", mclaren: "McLaren GT3", formula: "Formula V2.5" };
+
+// ---------- App ----------
+export default function App() {
+  const [sim, setSim] = useState("ir");
+  const [cat, setCat] = useState("todas");
+  const [trans, setTrans] = useState("todas");
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(null);
+
+  const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
+
+  const cats = useMemo(() => {
+    const present = [...new Set(data.map((x) => x.cat))];
+    return Object.keys(CATS).filter((k) => present.includes(k));
+  }, [sim]);
+
+  const TRANS_GROUPS = {
+    levas: (t) => t === "L" || t === "A",
+    sec: (t) => t === "S",
+    h: (t) => t === "H" || t === "HD",
+    sin: (t) => t === "N",
+  };
+
+  const lista = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    return data
+      .filter((x) =>
+        (cat === "todas" || x.cat === cat) &&
+        (trans === "todas" || TRANS_GROUPS[trans](x.t)) &&
+        (!ql || x.n.toLowerCase().includes(ql)))
+      .sort((a, b) => a.n.localeCompare(b.n));
+  }, [sim, cat, trans, q]);
+
+  const rec = sel ? recomendar(sel) : null;
+
+  return (
+    <div style={S.root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333b47; border-radius: 3px; }
+        .chipbar { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling: touch; }
+        .row:hover { background:#232a34 !important; }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+        input:focus, button:focus-visible { outline: 2px solid #F2B544; outline-offset: 2px; }
+      `}</style>
+
+      {/* Cabecera */}
+      <header style={S.header}>
+        <div style={S.flag} aria-hidden="true">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={i} style={{ ...S.flagSq, background: i % 2 ? "#E8E6E0" : "transparent" }} />
+          ))}
+        </div>
+        <h1 style={S.h1}>PIT WALL</h1>
+        <p style={S.sub}>
+          Tu rig, coche a coche · VRS Pro · Fanatec DD · 3 volantes · palanca H/secuencial
+        </p>
+      </header>
+
+      {/* Tabs de simulador */}
+      <div style={S.tabs} role="tablist">
+        {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.7"], ["acr", "AC Rally", "v0.4"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
+          <button
+            key={k}
+            role="tab"
+            aria-selected={sim === k}
+            onClick={() => { setSim(k); setCat("todas"); setTrans("todas"); setSel(null); }}
+            style={{ ...S.tab, ...(sim === k ? S.tabOn : {}) }}
+          >
+            <span style={{ fontFamily: "'Saira Condensed'", fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>{t}</span>
+            <span style={{ fontSize: 11, color: sim === k ? "#14171C" : "#8B94A1" }}>{v}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Ficha de recomendación */}
+      {sel && rec && (
+        <section style={S.card} aria-live="polite">
+          <button onClick={() => setSel(null)} style={S.back}>← volver a la lista</button>
+          <div style={S.cardCat}>{CATS[sel.cat].label} · {sel.y}</div>
+          <h2 style={S.cardTitle}>{sel.n}</h2>
+          <p style={S.cardInfo}>{sel.i}</p>
+
+          {/* Volante */}
+          <div style={S.block}>
+            <div style={S.blockLabel}>VOLANTE</div>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
+              {["redondo", "mclaren", "formula"].map((w) => (
+                <div key={w} style={{ textAlign: "center", opacity: rec.wheelKey === w ? 1 : 0.45 }}>
+                  <WheelIcon tipo={w} activo={rec.wheelKey === w} />
+                  <div style={{ fontSize: 10, color: rec.wheelKey === w ? "#F2B544" : "#8B94A1", marginTop: 2 }}>
+                    {WHEEL_LABELS[w]}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={S.blockMain}>{rec.wheel.nombre}</div>
+            <div style={S.blockSub}>{rec.wheel.porque}</div>
+          </div>
+
+          {/* Cambio */}
+          <div style={S.block}>
+            <div style={S.blockLabel}>CAMBIO</div>
+            <div style={S.blockMain}>{rec.shift.txt}</div>
+            {rec.shift.sub && <div style={S.blockSub}>{rec.shift.sub}</div>}
+          </div>
+
+          {/* Caja de cambios (solo iRacing, según artículo oficial) */}
+          {sim === "ir" && (() => {
+            const gb = gearboxOf(sel);
+            return (
+              <div style={S.block}>
+                <div style={S.blockLabel}>CAJA DE CAMBIOS · iRACING</div>
+                <div style={S.blockMain}>{gb.t}</div>
+                <div style={{ ...S.blockSub, marginTop: 4 }}>
+                  <strong style={{ color: "#B9C0CB" }}>Accionamiento:</strong> {gb.lever}
+                </div>
+                <div style={S.blockSub}>
+                  <strong style={{ color: "#B9C0CB" }}>Subir:</strong> {gb.up}
+                </div>
+                <div style={S.blockSub}>
+                  <strong style={{ color: "#B9C0CB" }}>Bajar:</strong> {gb.down}
+                </div>
+                {gb.extra && <div style={{ ...S.blockSub, marginTop: 4, fontStyle: "italic" }}>{gb.extra}</div>}
+              </div>
+            );
+          })()}
+
+          {/* Resorte VRS */}
+          <div style={{ ...S.block, display: "flex", gap: 16, alignItems: "center" }}>
+            <Spring color={rec.springKey === "rojo" ? "#D9442E" : "#3D7BD9"} dura={rec.springKey === "rojo"} />
+            <div style={{ flex: 1 }}>
+              <div style={S.blockLabel}>FRENO VRS</div>
+              <div style={{ ...S.blockMain, color: rec.springKey === "rojo" ? "#E8604C" : "#6B9BE3" }}>
+                {rec.spring.nombre}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
+                Fuerza máxima sugerida: ~{rec.kg} kg
+              </div>
+              <PressureBar range={rec.kg} color={rec.springKey === "rojo" ? "#D9442E" : "#3D7BD9"} />
+              <div style={{ ...S.blockSub, marginTop: 8 }}>{rec.spring.porque} Calibra el 100 % de freno en el software de VRS a esa fuerza con tu postura real de conducción.</div>
+            </div>
+          </div>
+
+          {/* Notas */}
+          {rec.notas.length > 0 && (
+            <div style={S.block}>
+              <div style={S.blockLabel}>NOTAS DE BOXES</div>
+              {rec.notas.map((nt, i) => (
+                <div key={i} style={{ ...S.blockSub, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid #F2B544" }}>{nt}</div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Buscador + filtros */}
+      {!sel && (
+        <>
+          <input
+            style={S.search}
+            placeholder={`Buscar entre ${data.length} coches…`}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Buscar coche"
+          />
+          <div className="chipbar">
+            <button onClick={() => setCat("todas")} style={{ ...S.chip, ...(cat === "todas" ? S.chipOn : {}) }}>Todas</button>
+            {cats.map((k) => (
+              <button key={k} onClick={() => setCat(k)} style={{ ...S.chip, ...(cat === k ? S.chipOn : {}) }}>
+                {CATS[k].label}
+              </button>
+            ))}
+          </div>
+          <div className="chipbar" style={{ marginTop: 2 }}>
+            {[["todas", "Cualquier cambio"], ["levas", "Levas"], ["sec", "Secuencial palanca"], ["h", "Palanca en H"], ["sin", "Sin cambios"]].map(([k, t]) => (
+              <button key={k} onClick={() => setTrans(k)} style={{ ...S.chip, ...(trans === k ? S.chipTrans : {}) }}>
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista estilo torre de tiempos */}
+          <div role="list">
+            {lista.map((x) => {
+              const r = recomendar(x);
+              return (
+                <button key={x.n} className="row" role="listitem" onClick={() => { setSel(x); window.scrollTo({ top: 0 }); }} style={S.row}>
+                  <span style={{ ...S.dot, background: r.springKey === "rojo" ? "#D9442E" : "#3D7BD9" }} aria-hidden="true" />
+                  <span style={{ flex: 1, textAlign: "left" }}>
+                    <span style={S.rowName}>{x.n}</span>
+                    <span style={S.rowMeta}>{CATS[x.cat].label} · {x.y} · {WHEEL_LABELS[x.w || CATS[x.cat].w]}</span>
+                  </span>
+                  <span style={S.rowArrow}>›</span>
+                </button>
+              );
+            })}
+            {lista.length === 0 && (
+              <div style={{ color: "#8B94A1", padding: 24, textAlign: "center", fontSize: 14 }}>
+                Ningún coche coincide. Prueba otra búsqueda o cambia de categoría.
+              </div>
+            )}
+          </div>
+
+          <footer style={S.footer}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 14 }}>
+              <span style={{ ...S.dot, background: "#3D7BD9" }} /> azul = resorte blando
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span style={{ ...S.dot, background: "#D9442E" }} /> rojo = resorte duro
+            </span>
+            <div style={{ marginTop: 10 }}>
+              Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.7 · AC Rally v0.4 · AMS2 v1.6 (por clases)
+            </div>
+          </footer>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------- Estilos ----------
+const S = {
+  root: {
+    minHeight: "100vh",
+    background: "#14171C",
+    color: "#E8E6E0",
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    padding: "0 14px 40px",
+    maxWidth: 760,
+    margin: "0 auto",
+  },
+  header: { padding: "22px 0 4px" },
+  flag: { display: "flex", width: 64, height: 8, border: "1px solid #3a4250", marginBottom: 10 },
+  flagSq: { flex: 1 },
+  h1: {
+    fontFamily: "'Saira Condensed', sans-serif",
+    fontWeight: 700,
+    fontSize: 42,
+    letterSpacing: 6,
+    margin: 0,
+    lineHeight: 1,
+  },
+  sub: { color: "#8B94A1", fontSize: 13, margin: "6px 0 0" },
+  tabs: { display: "flex", gap: 8, margin: "18px 0 14px" },
+  tab: {
+    flex: 1,
+    background: "#1C2128",
+    border: "1px solid #2A313B",
+    borderRadius: 6,
+    color: "#E8E6E0",
+    padding: "10px 0 8px",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 0,
+  },
+  tabOn: { background: "#F2B544", color: "#14171C", borderColor: "#F2B544" },
+  search: {
+    width: "100%",
+    background: "#1C2128",
+    border: "1px solid #2A313B",
+    borderRadius: 6,
+    color: "#E8E6E0",
+    padding: "11px 14px",
+    fontSize: 15,
+    marginBottom: 10,
+    fontFamily: "inherit",
+  },
+  chip: {
+    background: "#1C2128",
+    border: "1px solid #2A313B",
+    borderRadius: 999,
+    color: "#B9C0CB",
+    padding: "6px 13px",
+    fontSize: 13,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  chipOn: { background: "#E8E6E0", color: "#14171C", borderColor: "#E8E6E0", fontWeight: 600 },
+  chipTrans: { background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 },
+  row: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    background: "#1C2128",
+    border: "1px solid #2A313B",
+    borderRadius: 6,
+    padding: "11px 14px",
+    marginTop: 8,
+    cursor: "pointer",
+    color: "#E8E6E0",
+    fontFamily: "inherit",
+    transition: "background .15s",
+  },
+  dot: { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 },
+  rowName: { display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.3 },
+  rowMeta: { display: "block", fontSize: 11.5, color: "#8B94A1", marginTop: 2 },
+  rowArrow: { color: "#4a5260", fontSize: 20 },
+  card: {
+    background: "#1C2128",
+    border: "1px solid #2A313B",
+    borderRadius: 8,
+    padding: "16px 16px 8px",
+    marginBottom: 16,
+  },
+  back: {
+    background: "none",
+    border: "none",
+    color: "#F2B544",
+    fontSize: 13,
+    cursor: "pointer",
+    padding: 0,
+    marginBottom: 10,
+    fontFamily: "inherit",
+  },
+  cardCat: {
+    fontFamily: "'Saira Condensed', sans-serif",
+    fontSize: 13,
+    letterSpacing: 2,
+    color: "#F2B544",
+    textTransform: "uppercase",
+  },
+  cardTitle: {
+    fontFamily: "'Saira Condensed', sans-serif",
+    fontSize: 28,
+    fontWeight: 700,
+    margin: "2px 0 8px",
+    lineHeight: 1.1,
+  },
+  cardInfo: { color: "#B9C0CB", fontSize: 14, lineHeight: 1.55, margin: "0 0 16px" },
+  block: { borderTop: "1px solid #2A313B", padding: "13px 0" },
+  blockLabel: {
+    fontFamily: "'Saira Condensed', sans-serif",
+    fontSize: 12,
+    letterSpacing: 3,
+    color: "#8B94A1",
+    marginBottom: 4,
+  },
+  blockMain: { fontSize: 16, fontWeight: 600, marginBottom: 3 },
+  blockSub: { fontSize: 13, color: "#9aa3b0", lineHeight: 1.5 },
+  footer: { marginTop: 28, fontSize: 12, color: "#6b7482", lineHeight: 1.6 },
+};
