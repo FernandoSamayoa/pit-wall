@@ -491,9 +491,10 @@
       return { wheel: WHEELS[wheelKey], wheelKey, spring: SPRINGS[springKey], springKey, shift, notas, kg };
     }
 
-    function PressureBar({ range, color }) {
+    function PressureBar({ range, color, marker }) {
       const [lo, hi] = range.split("–").map(Number);
       const MAX = 150;
+      const markerPct = marker ? Math.min((marker / MAX) * 100, 100) : null;
       return (
         <div style={{ marginTop: 8 }}>
           <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
@@ -501,6 +502,14 @@
               position: "absolute", left: `${(lo / MAX) * 100}%`, width: `${((hi - lo) / MAX) * 100}%`,
               top: 0, bottom: 0, background: color, borderRadius: 4,
             }} />
+            {markerPct !== null && (
+              <div style={{
+                position: "absolute", left: `${markerPct}%`,
+                top: -4, bottom: -4, width: 2, background: "#fff",
+                borderRadius: 1, transform: "translateX(-50%)",
+                boxShadow: "0 0 4px rgba(255,255,255,0.6)",
+              }} />
+            )}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#6b7482", marginTop: 3 }}>
             <span>0 kg</span><span>75</span><span>150 kg</span>
@@ -567,6 +576,7 @@
       const [trans, setTrans] = useState("todas");
       const [q, setQ] = useState("");
       const [sel, setSel] = useState(null);
+      const [customKg, setCustomKg] = useState({});
 
       const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
 
@@ -683,20 +693,53 @@
                 );
               })()}
 
-              <div style={{ ...S.block, display: "flex", gap: 16, alignItems: "center" }}>
-                <Spring color={rec.springKey === "rojo" ? "#D9442E" : "#3D7BD9"} dura={rec.springKey === "rojo"} />
-                <div style={{ flex: 1 }}>
-                  <div style={S.blockLabel}>FRENO VRS</div>
-                  <div style={{ ...S.blockMain, color: rec.springKey === "rojo" ? "#E8604C" : "#6B9BE3" }}>
-                    {rec.spring.nombre}
+              {(() => {
+                const kgKey = `${sim}:${rec.kg}`;
+                const userKg = customKg[kgKey];
+                const springColor = rec.springKey === "rojo" ? "#D9442E" : "#3D7BD9";
+                const handleKgChange = (val) => {
+                  const n = parseInt(val, 10);
+                  setCustomKg(prev => {
+                    const next = { ...prev };
+                    if (!val || isNaN(n) || n <= 0) delete next[kgKey];
+                    else next[kgKey] = Math.min(n, 300);
+                    return next;
+                  });
+                };
+                return (
+                  <div style={{ ...S.block, display: "flex", gap: 16, alignItems: "flex-start" }}>
+                    <Spring color={springColor} dura={rec.springKey === "rojo"} />
+                    <div style={{ flex: 1 }}>
+                      <div style={S.blockLabel}>FRENO VRS</div>
+                      <div style={{ ...S.blockMain, color: rec.springKey === "rojo" ? "#E8604C" : "#6B9BE3" }}>
+                        {rec.spring.nombre}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
+                        Rango sugerido: ~{rec.kg} kg
+                        {userKg && <span style={{ color: "#F2B544", fontWeight: 700, marginLeft: 8 }}>· Tu valor: {userKg} kg</span>}
+                      </div>
+                      <PressureBar range={rec.kg} color={springColor} marker={userKg} />
+                      <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, color: "#8B94A1" }}>Tu valor para este rango:</span>
+                        <input
+                          type="number" min="1" max="300"
+                          placeholder="kg"
+                          value={userKg || ""}
+                          onChange={e => handleKgChange(e.target.value)}
+                          style={{ width: 62, background: "#2A313B", border: "1px solid #3a4250", borderRadius: 4, color: "#E8E6E0", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
+                        />
+                        <span style={{ fontSize: 12, color: "#8B94A1" }}>kg</span>
+                        {userKg && (
+                          <button onClick={() => handleKgChange("")} style={{ background: "none", border: "none", color: "#6b7482", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
+                            limpiar
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ ...S.blockSub, marginTop: 6 }}>{rec.spring.porque} Calibra el 100 % de freno en el software de VRS a esa fuerza con tu postura real de conducción.</div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
-                    Fuerza máxima sugerida: ~{rec.kg} kg
-                  </div>
-                  <PressureBar range={rec.kg} color={rec.springKey === "rojo" ? "#D9442E" : "#3D7BD9"} />
-                  <div style={{ ...S.blockSub, marginTop: 8 }}>{rec.spring.porque} Calibra el 100 % de freno en el software de VRS a esa fuerza con tu postura real de conducción.</div>
-                </div>
-              </div>
+                );
+              })()}
 
               {rec.notas.length > 0 && (
                 <div style={S.block}>
