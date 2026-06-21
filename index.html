@@ -14,7 +14,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
     /* ============================================================
        PIT WALL — Selector de configuración del rig
@@ -577,7 +577,12 @@
       const [spring, setSpring] = useState("todas");
       const [q, setQ] = useState("");
       const [sel, setSel] = useState(null);
-      const [customKg, setCustomKg] = useState({});
+      const [customKg, setCustomKg] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("pitwall_kg") || "{}"); } catch { return {}; }
+      });
+      useEffect(() => {
+        localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
+      }, [customKg]);
 
       const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
 
