@@ -19,17 +19,8 @@
     const { useState, useMemo, useEffect, useRef } = React;
 
     // ---- Firebase ----
-    // Rellena estos valores con los de tu proyecto en Firebase Console > Configuración del proyecto
-    const FIREBASE_CONFIG = {
-      apiKey:            "AIzaSyD9GaSCVDaIDXXZnP6TlZpD5CYQvAKNUD8",
-      authDomain:        "pit-wall-e7046.firebaseapp.com",
-      projectId:         "pit-wall-e7046",
-    };
+    // Config se carga en runtime desde /api/config (las keys viven en variables de entorno de Vercel)
     let CONFIGS = null;
-    try {
-      firebase.initializeApp(FIREBASE_CONFIG);
-      CONFIGS = firebase.firestore().collection("configs");
-    } catch (e) { console.warn("Firebase no configurado:", e.message); }
 
     function genSyncCode() {
       const a = Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -606,16 +597,31 @@
       const [codeInput, setCodeInput] = useState("");
       const [showCodeInput, setShowCodeInput] = useState(false);
       const [syncing, setSyncing] = useState(false);
+      const [firebaseReady, setFirebaseReady] = useState(false);
 
       const [customKg, setCustomKg] = useState(() => {
         try { return JSON.parse(localStorage.getItem("pitwall_kg") || "{}"); } catch { return {}; }
       });
       const saveTimer = useRef(null);
       const skipNextSave = useRef(false);
+      const fbReady = useRef(false);
 
-      // Carga desde Firestore cuando cambia el código de sincronización
+      // Carga config desde /api/config sin exponer keys en el código fuente
       useEffect(() => {
-        if (!CONFIGS) return;
+        fetch('/api/config')
+          .then(r => r.json())
+          .then(cfg => {
+            firebase.initializeApp(cfg);
+            CONFIGS = firebase.firestore().collection("configs");
+            fbReady.current = true;
+            setFirebaseReady(true);
+          })
+          .catch(e => console.warn("Firebase no disponible:", e));
+      }, []);
+
+      // Carga desde Firestore cuando cambia syncCode o Firebase está listo
+      useEffect(() => {
+        if (!firebaseReady) return;
         clearTimeout(saveTimer.current);
         setSyncing(true);
         CONFIGS.doc(syncCode).get()
@@ -627,12 +633,12 @@
             setSyncing(false);
           })
           .catch(() => setSyncing(false));
-      }, [syncCode]);
+      }, [syncCode, firebaseReady]);
 
       // Guarda en Firestore + localStorage cada vez que cambia customKg
       useEffect(() => {
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
-        if (!CONFIGS) return;
+        if (!fbReady.current) return;
         if (skipNextSave.current) { skipNextSave.current = false; return; }
         clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
