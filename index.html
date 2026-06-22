@@ -6,6 +6,8 @@
   <title>PIT WALL — Configurador de rig</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
   <style>
     body { margin: 0; background: #14171C; }
@@ -14,7 +16,26 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+    const { useState, useMemo, useEffect, useRef } = React;
+
+    // ---- Firebase ----
+    // Rellena estos valores con los de tu proyecto en Firebase Console > Configuración del proyecto
+    const FIREBASE_CONFIG = {
+      apiKey:            "REPLACE_ME",
+      authDomain:        "REPLACE_ME.firebaseapp.com",
+      projectId:         "REPLACE_ME",
+    };
+    let CONFIGS = null;
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      CONFIGS = firebase.firestore().collection("configs");
+    } catch (e) { console.warn("Firebase no configurado:", e.message); }
+
+    function genSyncCode() {
+      const a = Math.random().toString(36).slice(2, 6).toUpperCase();
+      const b = String(Math.floor(Math.random() * 900) + 100);
+      return `${a}-${b}`;
+    }
 
     /* ============================================================
        PIT WALL — Selector de configuración del rig
@@ -577,12 +598,57 @@
       const [spring, setSpring] = useState("todas");
       const [q, setQ] = useState("");
       const [sel, setSel] = useState(null);
+      const [syncCode, setSyncCode] = useState(() => {
+        let c = localStorage.getItem("pitwall_sync_code");
+        if (!c) { c = genSyncCode(); localStorage.setItem("pitwall_sync_code", c); }
+        return c;
+      });
+      const [codeInput, setCodeInput] = useState("");
+      const [showCodeInput, setShowCodeInput] = useState(false);
+      const [syncing, setSyncing] = useState(false);
+
       const [customKg, setCustomKg] = useState(() => {
         try { return JSON.parse(localStorage.getItem("pitwall_kg") || "{}"); } catch { return {}; }
       });
+      const saveTimer = useRef(null);
+      const skipNextSave = useRef(false);
+
+      // Carga desde Firestore cuando cambia el código de sincronización
+      useEffect(() => {
+        if (!CONFIGS) return;
+        clearTimeout(saveTimer.current);
+        setSyncing(true);
+        CONFIGS.doc(syncCode).get()
+          .then(snap => {
+            if (snap.exists && snap.data().customKg) {
+              skipNextSave.current = true;
+              setCustomKg(snap.data().customKg);
+            }
+            setSyncing(false);
+          })
+          .catch(() => setSyncing(false));
+      }, [syncCode]);
+
+      // Guarda en Firestore + localStorage cada vez que cambia customKg
       useEffect(() => {
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
+        if (!CONFIGS) return;
+        if (skipNextSave.current) { skipNextSave.current = false; return; }
+        clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => {
+          CONFIGS.doc(syncCode).set({ customKg }).catch(() => {});
+        }, 800);
+        return () => clearTimeout(saveTimer.current);
       }, [customKg]);
+
+      const applyCode = () => {
+        const c = codeInput.trim().toUpperCase();
+        if (c.length < 4) return;
+        localStorage.setItem("pitwall_sync_code", c);
+        setSyncCode(c);
+        setCodeInput("");
+        setShowCodeInput(false);
+      };
 
       const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
 
@@ -635,6 +701,35 @@
               Tu rig, carro a carro · VRS Pro · Fanatec DD · 3 volantes · palanca H/secuencial
             </p>
           </header>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 2px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: syncing ? "#F2B544" : "#4a5260", minWidth: 60 }}>
+              {syncing ? "sincronizando…" : "⊙ sync"}
+            </span>
+            {!showCodeInput ? (
+              <>
+                <code style={{ fontSize: 12, fontWeight: 700, color: "#8B94A1", letterSpacing: 2, background: "#1C2128", padding: "2px 10px", borderRadius: 4, border: "1px solid #2A313B" }}>
+                  {syncCode}
+                </code>
+                <button onClick={() => navigator.clipboard.writeText(syncCode)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>copiar</button>
+                <button onClick={() => setShowCodeInput(true)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cambiar</button>
+              </>
+            ) : (
+              <>
+                <input
+                  value={codeInput}
+                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                  onKeyDown={e => e.key === "Enter" && applyCode()}
+                  placeholder="ej. XKPQ-847"
+                  maxLength={9}
+                  style={{ width: 110, background: "#2A313B", border: "1px solid #F2B544", borderRadius: 4, color: "#E8E6E0", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
+                  autoFocus
+                />
+                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 }}>usar</button>
+                <button onClick={() => { setShowCodeInput(false); setCodeInput(""); }} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cancelar</button>
+              </>
+            )}
+          </div>
 
           <div style={S.tabs} role="tablist">
             {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.7"], ["acr", "AC Rally", "v0.4"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
