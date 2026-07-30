@@ -31,9 +31,9 @@
     /* ============================================================
        PIT WALL — Selector de configuración del rig
        Hardware: Pedales VRS Pro (resorte azul/rojo) · Fanatec
-       Volantes: Redondo+Rally Module · McLaren GT3 · Formula V2.5+APM
+       Volantes: Redondo 332mm+Button Rally Module · CSL GT3 · Formula 2.5X · Podium 330mm
        Palanca Fanatec H/secuencial
-       Listas: iRacing 2026 S3 · AC EVO v0.7 (junio 2026)
+       Listas: iRacing 2026 S3 · AC EVO v0.8
        ============================================================ */
 
     // ---- Códigos de transmisión ----
@@ -43,16 +43,16 @@
     const CATS = {
       formula:   { label: "Fórmula",        w: "formula", s: "rojo", kg: "110–140" },
       proto:     { label: "Prototipos",     w: "formula", s: "rojo", kg: "100–130" },
-      gt3:       { label: "GT3",            w: "mclaren", s: "rojo", kg: "85–110" },
-      gt4:       { label: "GT4",            w: "mclaren", s: "rojo", kg: "75–100" },
-      gte:       { label: "GTE",            w: "mclaren", s: "rojo", kg: "90–120" },
-      gt2:       { label: "GT2",            w: "mclaren", s: "rojo", kg: "90–120" },
-      gt1:       { label: "GT1 / clásicos GT", w: "mclaren", s: "rojo", kg: "90–120" },
-      copa:      { label: "Copas monomarca",w: "mclaren", s: "rojo", kg: "85–110" },
-      tcr:       { label: "TCR / Turismos", w: "mclaren", s: "azul", kg: "55–70" },
+      gt3:       { label: "GT3",            w: "gt3", s: "rojo", kg: "85–110" },
+      gt4:       { label: "GT4",            w: "gt3", s: "rojo", kg: "75–100" },
+      gte:       { label: "GTE",            w: "gt3", s: "rojo", kg: "90–120" },
+      gt2:       { label: "GT2",            w: "gt3", s: "rojo", kg: "90–120" },
+      gt1:       { label: "GT1 / clásicos GT", w: "gt3", s: "rojo", kg: "90–120" },
+      copa:      { label: "Copas monomarca",w: "gt3", s: "rojo", kg: "85–110" },
+      tcr:       { label: "TCR / Turismos", w: "gt3", s: "azul", kg: "55–70" },
       supercars: { label: "Supercars / Stock Car", w: "redondo", s: "rojo", kg: "90–120" },
       calle:     { label: "Calle",          w: "redondo", s: "azul", kg: "60–70" },
-      hiper:     { label: "Superdeportivos",w: "mclaren", s: "azul", kg: "55–70" },
+      hiper:     { label: "Superdeportivos",w: "podium", s: "azul", kg: "55–70" },
       clasico:   { label: "Clásicos",       w: "redondo", s: "azul", kg: "55–70" },
       rally:     { label: "Rally / Rallycross", w: "redondo", s: "azul", kg: "60–70" },
       nascar:    { label: "NASCAR / Óvalo", w: "redondo", s: "azul", kg: "45–60" },
@@ -111,7 +111,7 @@
       c("Mercedes-AMG GT3 2020", "gt3", 2020, "L", "V8 atmosférico delantero, muy estable y noble."),
       c("Audi R8 LMS EVO II", "gt3", 2022, "L", "V10 central atmosférico, muy progresivo."),
       c("Lamborghini Huracán GT3 EVO", "gt3", 2019, "L", "GT3 agresivo de tren delantero afilado."),
-      c("McLaren 720S GT3 EVO", "gt3", 2023, "L", "Carbono y aero eficiente. Tu volante McLaren es literalmente el suyo.", { notas: ["El McLaren GT3 V2 es la réplica del volante real de este carro: combinación perfecta."] }),
+      c("McLaren 720S GT3 EVO", "gt3", 2023, "L", "Carbono y aero eficiente."),
       c("Ford Mustang GT3", "gt3", 2024, "L", "V8 de 5.4L. Nuevo GT3 americano."),
       c("Chevrolet Corvette Z06 GT3.R", "gt3", 2024, "L", "GT3 del Corvette de motor central."),
       c("Acura NSX GT3 EVO 22", "gt3", 2022, "L", "GT3 híbrido-no, biturbo central. Muy estable."),
@@ -119,11 +119,11 @@
       c("GT3 Legacy (BMW Z4 / Audi R8 / Ferrari 488 / Mercedes AMG 2015)", "gt3", 2015, "L", "La generación GT3 anterior, disponible como contenido legacy a 2,95 $."),
 
       // ---------- GT4 ----------
-      c("Aston Martin Vantage GT4", "gt4", 2019, "L", "GT4 británico equilibrado."),
-      c("BMW M4 GT4 (G82)", "gt4", 2023, "L", "GT4 moderno con mucha electrónica de ayuda."),
-      c("McLaren 570S GT4", "gt4", 2017, "L", "GT4 de carbono, frenos sin ABS de serie en iRacing."),
+      c("Aston Martin Vantage GT4", "gt4", 2019, "L", "GT4 británico equilibrado.", { w: "podium" }),
+      c("BMW M4 GT4 (G82)", "gt4", 2023, "L", "GT4 moderno con mucha electrónica de ayuda.", { w: "podium" }),
+      c("McLaren 570S GT4", "gt4", 2017, "L", "GT4 de carbono, frenos sin ABS de serie en iRacing.", { w: "podium" }),
       c("Mercedes-AMG GT4", "gt4", 2018, "L", "GT4 robusto basado en el AMG GT."),
-      c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 más popular: motor central, PDK con levas."),
+      c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 más popular: motor central, PDK con levas.", { w: "podium" }),
       c("Ford Mustang GT4", "gt4", 2017, "L", "El GT4 del Mustang, V8 con carácter."),
 
       // ---------- GTE ----------
@@ -146,16 +146,16 @@
       c("Global Mazda MX-5 Cup", "copa", 2025, "S", "El MX-5 Cup actual: caja secuencial de competición con palanca.", { w: "redondo", s: "azul", notas: ["Palanca Fanatec en modo secuencial: tirón seco sin embrague en marcha."] }),
       c("Mazda MX-5 Cup (legacy)", "copa", 2015, "H", "La versión clásica del carro-escuela: 6 velocidades en H y embrague.", { w: "redondo", s: "azul" }),
       c("Toyota GR86 Cup", "copa", 2022, "L", "Copa de iniciación moderna: secuencial SADEV de 6 con levas.", { s: "azul" }),
-      c("BMW M2 CS Racing", "copa", 2020, "L", "Turismo de copa con DCT y levas. Muy noble.", { s: "azul" }),
-      c("BMW M2 Racing (G87) — NUEVO y GRATIS", "copa", 2026, "L", "Novedad de la Season 3 2026, contenido base gratuito. 313 CV, DCT.", { s: "azul" }),
+      c("BMW M2 CS Racing", "copa", 2020, "L", "Turismo de copa con DCT y levas. Muy noble.", { s: "azul", w: "podium" }),
+      c("BMW M2 Racing (G87) — NUEVO y GRATIS", "copa", 2026, "L", "Novedad de la Season 3 2026, contenido base gratuito. 313 CV, DCT.", { s: "azul", w: "podium" }),
 
       // ---------- TCR / TURISMOS ----------
       c("Renault Clio R.S. V Cup", "tcr", 2023, "L", "El Clio Cup de quinta generación: 200 CV, FWD y caja de garras secuencial.", { notas: ["Cambio secuencial accionado por levas, como en el carro real de la Clio Cup."] }),
-      c("Audi RS 3 LMS Gen2 TCR", "tcr", 2021, "L", "TCR alemán: tracción delantera y levas (la versión Gen1 queda como legacy)."),
+      c("Audi RS 3 LMS Gen2 TCR", "tcr", 2021, "L", "TCR alemán: tracción delantera y levas (la versión Gen1 queda como legacy).", { w: "podium" }),
       c("Honda Civic Type R TCR", "tcr", 2018, "L", "TCR ágil, referencia de la clase."),
       c("Hyundai Elantra N TCR", "tcr", 2021, "L", "TCR moderno de Hyundai."),
       c("Hyundai Veloster N TCR", "tcr", 2019, "L", "El otro TCR de Hyundai, algo más corto de batalla."),
-      c("Stock Car Brasil (Cruze / Corolla)", "supercars", 2023, "L", "Stock Car Pro Series brasileño: V8 con levas y push-to-pass.", { w: "mclaren" }),
+      c("Stock Car Brasil (Cruze / Corolla)", "supercars", 2023, "L", "Stock Car Pro Series brasileño: V8 con levas y push-to-pass.", { w: "gt3" }),
       c("Ford Mustang GT Supercar (Gen3)", "supercars", 2023, "S", "Supercars australiano: V8 y secuencial de palanca. Físico y agresivo.", { notas: ["La palanca secuencial es parte de la experiencia Supercars: cambia con fuerza."] }),
       c("Chevrolet Camaro Supercar (Gen3)", "supercars", 2023, "S", "El rival del Mustang en Supercars. Mismo placer de palanca."),
       c("V8 Supercar Ford Falcon FG / Holden VF Commodore (Legacy)", "supercars", 2014, "S", "La generación anterior de Supercars, hoy contenido legacy."),
@@ -165,7 +165,7 @@
       c("Kia Optima", "tcr", 2013, "S", "Turismo de carreras coreano con secuencial de garras.", { w: "redondo" }),
       c("Ford Mustang FR500S", "calle", 2008, "H", "Mustang de copa con H y V8."),
       c("Pontiac Solstice", "calle", 2006, "H", "Roadster rookie de iRacing. Ideal para empezar."),
-      c("VW Jetta TDI Cup", "calle", 2009, "L", "Copa diésel con DSG: cambia con levas.", { w: "redondo" }),
+      c("VW Jetta TDI Cup", "calle", 2009, "L", "Copa diésel con DSG: cambia con levas.", { w: "podium" }),
 
       // ---------- NASCAR ----------
       c("NASCAR Next Gen — Chevrolet Camaro ZL1", "nascar", 2022, "S", "Cup Series actual: secuencial de 5 marchas con palanca.", { notas: ["En óvalos apenas se frena (azul perfecto); en rutero exige frenadas fuertes."] }),
@@ -213,12 +213,12 @@
     const ACEVO = [
       // ---------- CALLE / HOT HATCH ----------
       c("Abarth 695 Biposto", "calle", 2015, "H", "Hot hatch radical; en EVO puedes llevarlo con caja manual pura."),
-      c("Alfa Romeo Giulia GTAm", "calle", 2021, "L", "Berlina extrema de 540 CV con automático de levas.", { w: "mclaren" }),
+      c("Alfa Romeo Giulia GTAm", "calle", 2021, "L", "Berlina extrema de 540 CV con automático de levas.", { w: "podium" }),
       c("Alfa Romeo Junior Elettrica 280 Veloce", "calle", 2024, "N", "Eléctrico compacto: sin cambios, una sola marcha."),
-      c("Alpine A110 S Aero Kit", "calle", 2023, "L", "Ligero, ágil y con DCT de levas. Joya de curvas.", { w: "mclaren" }),
+      c("Alpine A110 S Aero Kit", "calle", 2023, "L", "Ligero, ágil y con DCT de levas. Joya de curvas.", { w: "podium" }),
       c("Alpine A290 (concept)", "calle", 2024, "N", "Hot hatch eléctrico de Alpine: sin cambios."),
-      c("Audi RS 3 Sportback", "calle", 2023, "L", "5 cilindros y DSG: levas y torque vectoring.", { w: "mclaren" }),
-      c("Audi RS 6", "calle", 2022, "L", "El familiar de 600 CV. Automático con levas.", { w: "mclaren" }),
+      c("Audi RS 3 Sportback", "calle", 2023, "L", "5 cilindros y DSG: levas y torque vectoring.", { w: "podium" }),
+      c("Audi RS 6", "calle", 2022, "L", "El familiar de 600 CV. Automático con levas.", { w: "podium" }),
       c("Honda S2000 (AP1)", "calle", 1999, "H", "9.000 rpm y un cambio manual legendario: palanca en H obligatoria."),
       c("Hyundai i30 N Performance", "calle", 2021, "H", "Hot hatch manual (la variante Drive-N es automática con levas)."),
       c("Lotus Emira First Edition", "calle", 2022, "H", "V6 manual (variantes Sports con automático y levas)."),
@@ -226,7 +226,7 @@
       c("Mini John Cooper S MkVI (+ B16 / swap Honda)", "calle", 2004, "H", "Mini con swaps de motor disponibles. Manual en H."),
       c("Toyota GR86", "calle", 2022, "H", "El RWD asequible por excelencia. Manual en H."),
       c("Chevrolet Camaro ZL1 (+ 1LE)", "calle", 2018, "H", "Muscle car de 650 CV con manual de 6."),
-      c("VW Golf Mk8 GTI Clubsport", "calle", 2021, "L", "GTI con DSG: levas.", { w: "mclaren" }),
+      c("VW Golf Mk8 GTI Clubsport", "calle", 2021, "L", "GTI con DSG: levas.", { w: "podium" }),
       c("VW Golf Mk1 GTI", "clasico", 1976, "H", "El GTI original (en el juego desde la v0.5)."),
       c("Caterham Seven Academy", "calle", 2022, "H", "Minimalismo absoluto: H, embrague y muñecas finas.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
       c("Caterham Seven 485 CSR Final Edition", "calle", 2023, "H", "El Seven más rápido: misma receta, más potencia."),
@@ -237,8 +237,8 @@
       c("Ferrari Purosangue", "hiper", 2023, "L", "V12 y levas (anunciado para próximas versiones)."),
       c("Lamborghini Huracán STO (+ Track Options)", "hiper", 2021, "L", "V10 atmosférico orientado a circuito. Levas."),
       c("Dallara Stradale", "hiper", 2018, "L", "Barchetta de carbono con cambio robotizado de levas."),
-      c("BMW M4 CSL", "hiper", 2022, "L", "El M4 más radical, automático de levas.", { w: "mclaren" }),
-      c("BMW M8 Competition", "hiper", 2020, "L", "GT de 625 CV, automático con levas.", { w: "mclaren" }),
+      c("BMW M4 CSL", "hiper", 2022, "L", "El M4 más radical, automático de levas.", { w: "podium" }),
+      c("BMW M8 Competition", "hiper", 2020, "L", "GT de 625 CV, automático con levas.", { w: "podium" }),
       c("Mercedes-Benz AMG GT 63 (C192)", "hiper", 2024, "L", "Anunciado para próximas versiones."),
 
       // ---------- CLÁSICOS ----------
@@ -246,7 +246,7 @@
       c("Alfa Romeo Giulia Sprint GTA", "clasico", 1965, "H", "El Alfa de carreras de los 60: ligero y deslizante."),
       c("Audi Sport quattro", "rally", 1983, "H", "El icono del Grupo B en versión calle: AWD, turbo y H.", { notas: ["Aro redondo + Rally Module: la combinación natural para un quattro."] }),
       c("BMW M3 E30 Sport Evolution", "clasico", 1990, "HD", "El M3 original en su versión más afilada. Caja dogleg.", { notas: ["Caja dogleg: 1ª abajo a la izquierda. Pruébalo así en la palanca, es parte del encanto."] }),
-      c("BMW M3 E46 CSL", "clasico", 2003, "L", "SMG secuencial robotizado: se lleva con levas.", { w: "mclaren" }),
+      c("BMW M3 E46 CSL", "clasico", 2003, "L", "SMG secuencial robotizado: se lleva con levas.", { w: "podium" }),
       c("Datsun 240Z (nuevo v0.7)", "clasico", 1971, "H", "Recién llegado en la actualización 0.7, en dos variantes."),
       c("Ferrari 288 GTO", "clasico", 1984, "HD", "Biturbo ochentero con caja dogleg abierta. Respeto."),
       c("Ferrari F40 LM", "clasico", 1989, "H", "El F40 de competición: turbo lag, cero ayudas y frenada de carreras.", { s: "rojo", notas: ["Punta-tacón con resorte duro: más fácil de lo que parece, porque el pie no se hunde y frenas por presión. Ajusta la altura de las caras de los pedales VRS para que gas y freno cargado queden a nivel."] }),
@@ -269,8 +269,9 @@
       c("Ford Mustang GT3", "gt3", 2024, "L", "El nuevo GT3 americano."),
       c("Porsche 911 GT3 R rennsport", "gt3", 2023, "L", "Edición especial sin restricciones de homologación: 620 CV."),
       c("Audi R8 LMS GT4 Evo", "gt4", 2020, "L", "GT4 con base del R8 de calle."),
-      c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 de copa con PDK."),
+      c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "El GT4 de copa con PDK.", { w: "podium" }),
       c("Porsche 718 Cayman GT4 / GT4 RS (calle)", "calle", 2021, "H", "El GT4 de calle es manual; el RS lleva PDK con levas.", { notas: ["GT4 manual: palanca en H. GT4 RS: levas (PDK)."] }),
+      c("Porsche 911 GT3 RS (992)", "calle", 2022, "L", "El 911 de circuito extremo: solo PDK, sin opción manual. Añadido en la v0.5.", { w: "podium" }),
       c("Maserati GT2 (MC20)", "gt2", 2023, "L", "GT2: más potencia que un GT3, menos carga. Físico."),
       c("Mercedes-AMG GT2", "gt2", 2023, "L", "740 CV en modo push-to-pass. El GT más bruto de EVO."),
       c("Porsche 911 GT2 RS Clubsport Evo", "gt2", 2019, "L", "Track car de copa con 700 CV."),
@@ -278,7 +279,7 @@
       c("Porsche 911 GT3 Cup (992) — base / ABS / ABS+TC", "copa", 2021, "L", "Tres variantes de electrónica. La base, sin ABS, es la exigente.", { notas: ["En la variante base (sin ABS) el resorte rojo marca la diferencia en la dosificación."] }),
       c("Ferrari 488 Challenge Evo", "copa", 2020, "L", "Copa Ferrari: rápido y con ABS de competición."),
       c("Lamborghini Huracán Super Trofeo EVO 2", "copa", 2021, "L", "La copa de Lamborghini."),
-      c("BMW M2 CS Racing", "copa", 2020, "L", "El mismo turismo de copa que en iRacing: DCT y levas.", { s: "azul" }),
+      c("BMW M2 CS Racing", "copa", 2020, "L", "El mismo turismo de copa que en iRacing: DCT y levas.", { s: "azul", w: "podium" }),
       c("Mazda MX-5 ND Global Cup (manual / secuencial)", "copa", 2016, "H", "Dos variantes reales: manual en H o secuencial.", { w: "redondo", s: "azul", notas: ["Variante manual: palanca en H + embrague. Variante secuencial: palanca Fanatec en modo secuencial."] }),
 
       // ---------- FÓRMULA / PROTO ----------
@@ -333,7 +334,12 @@
       // ---------- GT ----------
       c("GT3 Gen2 (992 GT3 R, M4 GT3, 296 GT3, Mustang GT3…)", "gt3", 2023, "L", "La generación GT3 actual del Endurance Pack."),
       c("GT3 Gen1 (720S, AMG GT3 Evo, Huracán Evo2, R8 Evo II…)", "gt3", 2019, "L", "La generación GT3 anterior, plenamente vigente online."),
-      c("GT4 (Cayman CS, M4 GT4, 570S, AMG GT4, Camaro, Ginetta G55)", "gt4", 2019, "L", "La clase GT4 completa."),
+      c("Porsche 718 Cayman GT4 Clubsport", "gt4", 2019, "L", "GT4 de motor central con PDK: el carro real no tiene pedal de embrague.", { w: "podium" }),
+      c("BMW M4 GT4 (G82)", "gt4", 2023, "L", "GT4 moderno de BMW con DCT: sin pedal de embrague en el carro real.", { w: "podium" }),
+      c("McLaren 570S GT4", "gt4", 2017, "L", "GT4 de carbono de McLaren, motor central con caja de doble embrague.", { w: "podium" }),
+      c("Mercedes-AMG GT4", "gt4", 2017, "L", "GT4 alemán de motor delantero: caja secuencial con embrague para la salida."),
+      c("Chevrolet Camaro GT4.R", "gt4", 2017, "L", "Muscle car GT4 americano: caja secuencial con embrague para la salida."),
+      c("Ginetta G55 GT4", "gt4", 2012, "L", "GT4 británico ligero: caja secuencial con embrague para la salida."),
       c("GTE (911 RSR, M8 GTE, Corvette C8.R)", "gte", 2019, "L", "Los GTE de la era IMSA/WEC reciente."),
       c("GT1 Classics (McLaren F1 GTR, Porsche 911 GT1, CLK LM)", "gt1", 1997, "S", "Los GT1 de Le Mans de los 90.", { notas: ["El F1 GTR de 1995 lleva H con embrague; los del 97-98 ya son secuenciales."] }),
       c("Group A (190E Evo II, M3 E30 Sport Evo)", "clasico", 1991, "H", "El DTM clásico: H, embrague y peleas al milímetro."),
@@ -344,7 +350,7 @@
       c("Caterham (Academy / Supersport / Superlight / 360R / 620R)", "calle", 2015, "H", "Toda la escalera Caterham, del Academy al 620R.", { notas: ["Volante pequeño y redondo como el real: el aro redondo es el más fiel."] }),
 
       // ---------- TURISMOS Y COPAS BRASILEÑAS ----------
-      c("Stock Car Pro Series Brasil (2019-2025)", "supercars", 2024, "L", "La categoría reina brasileña: V8, levas y push-to-pass.", { w: "mclaren" }),
+      c("Stock Car Pro Series Brasil (2019-2025)", "supercars", 2024, "L", "La categoría reina brasileña: V8, levas y push-to-pass.", { w: "gt3" }),
       c("Stock Car Omega 1999 / Copa Montana", "supercars", 1999, "H", "Los clásicos del Stock Car: H y músculo.", { w: "redondo", s: "azul" }),
       c("Stock Cars americanos — 3 generaciones (update invierno 2025)", "nascar", 1987, "H", "Los stock cars estilo NASCAR añadidos junto a Pocono y Fontana.", { notas: ["Pensados para los óvalos del juego, con full-course yellows."] }),
       c("Super V8", "supercars", 2018, "S", "El V8 Supercar ficticio de Reiza: secuencial de palanca y mucho físico."),
@@ -448,16 +454,20 @@
 
     const WHEELS = {
       redondo: {
-        nombre: "Aro redondo + Podium Rally Module",
-        porque: "Aro continuo para cruzar las manos: lo correcto en clásicos, rally, drift, óvalo y tierra.",
+        nombre: "Timón Redondo 332mm + Button Rally Module",
+        porque: "Aro continuo para cruzar las manos y sin levas: lo correcto en clásicos, rally, drift, óvalo, tierra y cualquier carro que cambies con palanca (H o secuencial) o que no tenga cambios.",
       },
-      mclaren: {
-        nombre: "McLaren GT3 V2",
-        porque: "Formato GT con levas de cambio y de embrague: el volante natural para GT, copas y turismos modernos.",
+      gt3: {
+        nombre: "CSL GT3",
+        porque: "Levas de cambio y de embrague: el volante de carreras para GT3, GT4, GTE, GT2, copas y TCR, donde el coche real arranca con clutch paddles.",
       },
       formula: {
-        nombre: "Formula V2.5 + Advanced Podium Module",
-        porque: "Formato fórmula con levas de cambio, embrague y 2 levas extra: lo que pide un monoplaza o prototipo.",
+        nombre: "Formula 2.5X",
+        porque: "Levas de cambio, de embrague y 2 extra: lo que pide un monoplaza o prototipo.",
+      },
+      podium: {
+        nombre: "Podium 330mm (bottom flat)",
+        porque: "Solo levas de cambio, sin clutch paddles: el volante para carros de calle y superdeportivos con DCT/PDK, donde el embrague real es 100% automático.",
       },
     };
 
@@ -491,14 +501,14 @@
 
       if (car.t === "L") {
         if (wheelKey === "formula")
-          notas.push("Salida parada: usa las levas de embrague del APM. Las 2 levas extra: asígnalas a control de tracción y reparto de frenada.");
-        else if (wheelKey === "mclaren")
-          notas.push("Salida parada: usa las levas de embrague del McLaren para clavar el launch.");
+          notas.push("Salida parada: usa las levas de embrague del Formula 2.5X. Las 2 levas extra: asígnalas a control de tracción y reparto de frenada.");
+        else if (wheelKey === "gt3")
+          notas.push("Salida parada: usa las levas de embrague del CSL GT3 para clavar el launch.");
+        else if (wheelKey === "podium")
+          notas.push("El carro real no tiene pedal ni leva de embrague: el Podium 330mm no lleva clutch paddles porque no los necesitas.");
       }
       if ((car.t === "H" || car.t === "HD") && wheelKey === "redondo")
-        notas.push("El Rally Module no tiene levas de embrague: el embrague va siempre en el pedal VRS, como debe ser en un manual.");
-      if (car.t === "S" && wheelKey === "redondo")
-        notas.push("Si un día no quieres palanca, las levas del Rally Module sirven; pero la palanca secuencial es más fiel.");
+        notas.push("El Button Rally Module no tiene levas de ningún tipo: el embrague va siempre en el pedal VRS, como debe ser en un manual.");
 
       return { wheel: WHEELS[wheelKey], wheelKey, spring: SPRINGS[springKey], springKey, shift, notas, kg };
     }
@@ -561,11 +571,19 @@
               <path d="M50 41 V14 M42 53 L17 64 M58 53 L83 64" />
             </g>
           )}
-          {tipo === "mclaren" && (
+          {tipo === "gt3" && (
             <g stroke={col} strokeWidth={sw} fill="none">
               <path d="M18 38 Q50 22 82 38 L86 60 Q70 76 50 76 Q30 76 14 60 Z" />
               <rect x="40" y="44" width="20" height="14" rx="3" fill={col} stroke="none" />
               <path d="M40 51 H22 M60 51 H78" />
+              <path d="M27 65 L18 75 M73 65 L82 75" strokeLinecap="round" />
+            </g>
+          )}
+          {tipo === "podium" && (
+            <g stroke={col} strokeWidth={sw} fill="none">
+              <path d="M18 38 Q50 22 82 38 L85 62 L15 62 Z" />
+              <rect x="40" y="44" width="20" height="12" rx="3" fill={col} stroke="none" />
+              <path d="M40 50 H22 M60 50 H78" />
             </g>
           )}
           {tipo === "formula" && (
@@ -580,7 +598,7 @@
       );
     }
 
-    const WHEEL_LABELS = { redondo: "Redondo + Rally", mclaren: "McLaren GT3", formula: "Formula V2.5" };
+    const WHEEL_LABELS = { redondo: "Redondo 332mm", gt3: "CSL GT3", formula: "Formula 2.5X", podium: "Podium 330mm" };
 
     function App() {
       const [sim, setSim] = useState("ir");
@@ -704,7 +722,7 @@
             </div>
             <h1 style={S.h1}>PIT WALL</h1>
             <p style={S.sub}>
-              Tu rig, carro a carro · VRS Pro · Fanatec DD · 3 volantes · palanca H/secuencial
+              Tu rig, carro a carro · VRS Pro · Fanatec DD · 4 volantes · palanca H/secuencial
             </p>
           </header>
 
@@ -738,7 +756,7 @@
           </div>
 
           <div style={S.tabs} role="tablist">
-            {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.7"], ["acr", "AC Rally", "v0.4"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
+            {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.8"], ["acr", "AC Rally", "v0.4"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
               <button
                 key={k}
                 role="tab"
@@ -762,7 +780,7 @@
               <div style={S.block}>
                 <div style={S.blockLabel}>VOLANTE</div>
                 <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
-                  {["redondo", "mclaren", "formula"].map((w) => (
+                  {["redondo", "gt3", "formula", "podium"].map((w) => (
                     <div key={w} style={{ textAlign: "center", opacity: rec.wheelKey === w ? 1 : 0.45 }}>
                       <WheelIcon tipo={w} activo={rec.wheelKey === w} />
                       <div style={{ fontSize: 10, color: rec.wheelKey === w ? "#F2B544" : "#8B94A1", marginTop: 2 }}>
@@ -929,7 +947,7 @@
                   <span style={{ ...S.dot, background: "#D9442E" }} /> rojo = resorte duro
                 </span>
                 <div style={{ marginTop: 10 }}>
-                  Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.7 · AC Rally v0.4 · AMS2 v1.6 (por clases)
+                  Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.8 · AC Rally v0.4 · AMS2 v1.6 (por clases)
                 </div>
               </footer>
             </>
