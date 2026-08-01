@@ -722,7 +722,11 @@
             * { box-sizing: border-box; }
             ::-webkit-scrollbar { height: 6px; width: 6px; }
             ::-webkit-scrollbar-thumb { background: #333b47; border-radius: 3px; }
-            .chipbar { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling: touch; }
+            .chipbar { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+            /* En pantallas anchas no hay scroll horizontal cómodo con mouse: que los chips bajen de fila */
+            @media (min-width: 620px) {
+              .chipbar { flex-wrap: wrap; overflow-x: visible; padding-bottom: 0; }
+            }
             .row:hover { background:#232a34 !important; }
             @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
             input:focus, button:focus-visible { outline: 2px solid #F2B544; outline-offset: 2px; }
