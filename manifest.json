@@ -1,0 +1,16 @@
+{
+  "name": "PIT WALL — Configurador de rig",
+  "short_name": "PIT WALL",
+  "description": "Selector de configuración del rig: volante, palanca y freno por carro, para iRacing, AC EVO, AC Rally y AMS2.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#14171C",
+  "theme_color": "#14171C",
+  "lang": "es",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
