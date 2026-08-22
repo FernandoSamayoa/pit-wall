@@ -26,10 +26,11 @@ De arriba a abajo, `index.html` tiene estas piezas, en este orden:
 6. **`GBS` y `GB_MAP`**: descripciones de comportamiento de caja de cambios y
    el mapeo carro → tipo de caja, usados solo para la pestaña de iRacing.
 7. **`gearboxOf(car)`**: resuelve qué entrada de `GBS` le corresponde a un carro.
-8. **`WHEELS`, `SHIFTS`, `SPRINGS`**: textos y explicaciones para cada aro,
-   modo de palanca y resorte.
+8. **`WHEELS`, `SHIFTS`, `SPRINGS`, `BRAKES`**: textos y explicaciones para
+   cada aro y modo de palanca, y los **perfiles de freno** (resorte, tie-rod,
+   preload, rango de kg y explicación), agrupados por tipo de asistencia.
 9. **`recomendar(car)`**: la función central. Devuelve `{ wheel, wheelKey,
-   spring, springKey, shift, notas, kg }` para un carro dado.
+   spring, springKey, brake, brakeId, shift, notas, kg }` para un carro dado.
 10. **Componentes de presentación**: `PressureBar`, `Spring` (SVG del
     resorte), `WheelIcon` (SVG del aro), y `WHEEL_LABELS`.
 11. **`App()`**: el componente principal — estado, efectos (Firebase, sync,
@@ -54,14 +55,15 @@ const c = (n, cat, y, t, i, o) => ({ n, cat, y, t, i, ...(o || {}) });
 | `y` | Año (se muestra en el detalle del carro). |
 | `t` | Código de transmisión (ver tabla abajo). |
 | `i` | Texto descriptivo del carro (se muestra en la ficha). |
-| `o` | Objeto opcional de overrides: `{ w, s, kg, notas }`. |
+| `o` | Objeto opcional de overrides: `{ w, b, s, kg, notas }`. |
 
-`o.w` (aro), `o.s` (resorte) y `o.kg` (rango de kg) **sobreescriben** el
-default de la categoría (`CATS[cat].w/s/kg`) solo para ese carro puntual —
-por ejemplo, un GT3 normalmente usa resorte `"rojo"` porque su categoría lo
-define así, pero un carro específico puede forzar `"azul"` si en la realidad
-frena distinto (ver TCR en `IRACING`, que fuerza `s: "azul"` a nivel de
-categoría porque son turismos con freno más blando).
+`o.w` (aro) y `o.b` (perfil de freno, clave de `BRAKES`) **sobreescriben**
+el default de la categoría (`CATS[cat].w/b`) solo para ese carro puntual —
+por ejemplo, la categoría `clasico` usa el perfil `clasicoCalle` (azul),
+pero el Lotus 79 fuerza `b: "raceNoServo"` porque un F1 histórico frena sin
+servo y con fuerzas de competición. `o.s` (resorte) y `o.kg` (rango) siguen
+existiendo como ajuste fino por encima de lo que diga el perfil, pero en la
+práctica casi todo se resuelve eligiendo el perfil `b` correcto.
 
 `o.notas` es un array de strings; se muestran como bullets bajo "NOTAS DE
 BOXES" en la ficha del carro. Usalas para matices puntuales que las reglas
@@ -79,39 +81,56 @@ volantes pequeños por fidelidad histórica, etc).
 | `N` | Sin cambios (directo o marcha única) | Ni palanca ni levas. |
 | `A` | Automático | Tratado igual que `L` para el aro (levas opcionales). |
 
-## 3. Categorías (`CATS`)
+## 3. Categorías (`CATS`) y perfiles de freno (`BRAKES`)
 
-Cada entrada define el **default** de aro (`w`), resorte (`s`) y rango de kg
-(`kg`) para todos los carros de esa categoría, salvo que el carro individual
-lo sobreescriba con `o`:
+Cada entrada de `CATS` define el **default** de aro (`w`) y de perfil de
+freno (`b`) para todos los carros de esa categoría, salvo que el carro
+individual lo sobreescriba con `o`:
 
 ```js
-gt3: { label: "GT3", w: "gt3", s: "rojo", kg: "85–110" },
+gt3: { label: "GT3", w: "gt3", b: "gt3" },
 ```
 
 Los valores válidos de `w` son las claves de `WHEELS`: `"redondo"`, `"gt3"`,
-`"formula"`, `"podium"`. Los de `s` son las claves de `SPRINGS`: `"rojo"`,
-`"azul"`.
+`"formula"`, `"podium"`. Los de `b` son las claves de `BRAKES`.
+
+`BRAKES` agrupa los frenos **por tipo de asistencia (boost)**, no por color
+de resorte: un carro de calle con servo de vacío y un carro de copa sin
+servo usan los dos resorte azul, pero son perfiles distintos, con tie-rod,
+preload, rango de kg y valor guardado propios. Cada perfil define:
+
+```js
+gt3: {
+  nombre: "GT3 / Cup",
+  s: "rojo", tie: "Stock", pre: "Leve", kg: "85–110",
+  porque: "Más downforce y velocidad de frenada que GT4…",
+},
+```
+
+Los perfiles actuales, de menor a mayor fuerza: `dirt`, `oval`, `offroad`,
+`hiper`, `clasicoCalle`, `turismo`, `ligero`, `calle`, `rally` (todos azul)
+y `formulaJunior`, `gt4`, `raceNoServo`, `gt3`, `gte`, `supercars`, `proto`,
+`formula` (todos rojo). **Todos los carros de rally comparten el perfil
+`rally`**, separado del de calle aunque ambos sean azules.
 
 ## 4. `recomendar(car)`
 
 Resume la lógica de negocio de toda la app:
 
 1. Toma los defaults de la categoría (`CATS[car.cat]`).
-2. `wheelKey = car.w || meta.w` y `springKey = car.s || meta.s` — el carro
-   gana si define algo, si no se usa el default de la categoría.
+2. `wheelKey = car.w || meta.w` y `brakeId = car.b || meta.b` — el carro
+   gana si define algo, si no se usa el default de la categoría. Del perfil
+   salen `brake = BRAKES[brakeId]`, `springKey = car.s || brake.s` y
+   `kg = car.kg || brake.kg`.
 3. Arma la lista de `notas`: empieza con `car.notas` y le agrega notas
    automáticas para casos conocidos (salida con levas de embrague en
    Formula/GT3, ausencia de embrague en el aro `podium`, ausencia de levas
    en el aro `redondo` para autos de palanca en H).
-4. Calcula `kg`: usa `car.kg` si está definido; si no, el rango de la
-   categoría — salvo que el carro haya cambiado de resorte respecto al
-   default de su categoría, en cuyo caso usa un rango genérico para ese
-   resorte (`"55–70"` para azul, `"85–110"` para rojo).
 
-Si necesitás cambiar **qué aro/resorte corresponde a qué categoría**, tocá
-`CATS`. Si necesitás cambiar **una nota o regla que depende de la
-combinación aro+transmisión**, tocá `recomendar()`.
+Si necesitás cambiar **qué aro/perfil de freno corresponde a qué categoría**,
+tocá `CATS`. Si necesitás cambiar **el resorte/tie-rod/preload/kg de un
+perfil**, tocá `BRAKES`. Si necesitás cambiar **una nota o regla que depende
+de la combinación aro+transmisión**, tocá `recomendar()`.
 
 ## 5. Caja de cambios de iRacing (`GBS` / `GB_MAP` / `gearboxOf`)
 
@@ -145,7 +164,7 @@ final de `gearboxOf`).
 | `syncCode` | Código de 8 caracteres para sincronizar entre dispositivos; se genera una vez y se persiste en `localStorage`. |
 | `codeInput`, `showCodeInput` | UI para escribir un código de otro dispositivo. |
 | `syncing`, `firebaseReady` | Estado de la sincronización con Firestore. |
-| `customKg` | Mapa `"sim:rangoKg" -> valorEnKg` con los valores reales que el usuario ingresó. |
+| `customKg` | Mapa `"sim:perfilDeFreno" -> valorEnKg` con los valores reales que el usuario ingresó (p. ej. `"ir:gt3": 92`). |
 
 ### Efectos (`useEffect`)
 
@@ -188,9 +207,11 @@ final de `gearboxOf`).
   tenga el código puede leer y sobreescribir ese documento — no hay
   autenticación ni reglas de propiedad. Si en algún momento se agrega
   auth de usuarios, este es el lugar para revisarlo.
-- **Formato del documento**: `{ customKg: { "ir:85–110": 92, "ac:55–70": 61, ... } }`.
-  La clave combina el simulador y el rango de kg de la categoría/carro, para
-  que un mismo carro en distintos sims no pise el valor del otro.
+- **Formato del documento**: `{ customKg: { "ir:gt3": 92, "ac:calle": 61, ... } }`.
+  La clave combina el simulador y el **perfil de freno** (`BRAKES`), para que
+  un mismo perfil en distintos sims no pise el valor del otro, y para que
+  perfiles distintos (calle vs. rally vs. GT3) nunca compartan valor aunque
+  usen el mismo resorte o el mismo rango de kg.
 - **Config de Firebase**: no está hardcodeada en `index.html`. Se pide en
   runtime a `/api/config` ([`api/config.js`](../api/config.js)), que lee
   `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` y `FIREBASE_PROJECT_ID` de las
@@ -211,12 +232,12 @@ final de `gearboxOf`).
    c("Nombre del carro", "gt3", 2024, "L", "Descripción del carro."),
    ```
 
-3. Si el carro necesita un aro, resorte o rango de kg distinto al default de
+3. Si el carro necesita un aro o un perfil de freno distinto al default de
    su categoría, o notas propias, agregá el 6º argumento:
 
    ```js
    c("Nombre del carro", "gt3", 2024, "L", "Descripción.", {
-     w: "podium", s: "azul", kg: "60–75",
+     w: "podium", b: "turismo",
      notas: ["Nota puntual de este carro."],
    }),
    ```
@@ -229,12 +250,14 @@ No hace falta build ni reinicio de nada: es HTML servido tal cual.
 
 ### Agregar una categoría nueva
 
-Sumá una entrada a `CATS` con label, aro y resorte por defecto, y rango de
-kg por defecto:
+Sumá una entrada a `CATS` con label, aro y perfil de freno por defecto:
 
 ```js
-misilcars: { label: "Carros misil", w: "formula", s: "rojo", kg: "120–150" },
+misilcars: { label: "Carros misil", w: "formula", b: "formula" },
 ```
+
+Si ningún perfil de `BRAKES` encaja, definí uno nuevo ahí mismo (resorte,
+tie-rod, preload, rango de kg y explicación) y referencialo desde `b`.
 
 Los carros que usen `"misilcars"` como `cat` van a heredar esos defaults
 salvo que los sobreescriban individualmente.
@@ -266,12 +289,15 @@ salvo que los sobreescriban individualmente.
    (en ese caso, habría que generalizar `gearboxOf`/`GB_MAP` para que
    dependan también de `sim`, hoy asumen iRacing).
 
-### Cambiar qué aro/resorte le corresponde a una categoría completa
+### Cambiar qué aro/perfil de freno le corresponde a una categoría completa
 
 Editá el default en `CATS`. Afecta a todos los carros de esa categoría que
-no tengan su propio override (`o.w` / `o.s`).
+no tengan su propio override (`o.w` / `o.b`).
 
-### Cambiar el texto o el color de un aro/resorte/modo de palanca
+### Cambiar el texto o los valores de un aro/freno/modo de palanca
 
-Editá `WHEELS`, `SPRINGS` o `SHIFTS` respectivamente — son los únicos
-lugares donde vive el copy que se muestra en la ficha del carro.
+Editá `WHEELS`, `BRAKES` o `SHIFTS` respectivamente — son los únicos
+lugares donde vive el copy que se muestra en la ficha del carro. Ojo: la
+clave de un perfil de `BRAKES` también es parte de la clave con la que se
+guardan los kg del usuario (`"sim:perfil"`); si renombrás un perfil, los
+valores guardados bajo el nombre viejo dejan de encontrarse.
