@@ -165,6 +165,8 @@ final de `gearboxOf`).
 | `codeInput`, `showCodeInput` | UI para escribir un código de otro dispositivo. |
 | `syncing`, `firebaseReady` | Estado de la sincronización con Firestore. |
 | `customKg` | Mapa `"sim:perfilDeFreno" -> valorEnKg` con los valores reales que el usuario ingresó (p. ej. `"ir:gt3": 92`). |
+| `tieMm` | `{ corta?, larga? }` en mm: longitudes de tie-rod del usuario, **globales** (un solo valor para todos los carros y sims). El stock es la constante `TIE_STOCK_MM` (43 mm) y nunca cambia. |
+| `tieModal`, `tieDraft` | Visibilidad y valores en edición de la ventana "modificar" del tie-rod. |
 
 ### Efectos (`useEffect`)
 
@@ -198,16 +200,16 @@ final de `gearboxOf`).
 
 ## 7. Sincronización (Firebase) {#sincronización-firebase}
 
-- **Qué se sincroniza**: únicamente `customKg`, el mapa de valores reales de
-  freno que el usuario ingresó. Todo lo demás (filtros, selección) es
-  efímero y no se persiste.
+- **Qué se sincroniza**: `customKg` (valores reales de freno) y `tieMm`
+  (longitudes corta/larga del tie-rod, en mm). Todo lo demás (filtros,
+  selección) es efímero y no se persiste.
 - **Cómo se identifica un dispositivo/usuario**: no hay login. El
   "código de sync" (`XXXX-999`) generado por `genSyncCode()` es literalmente
   la clave del documento en Firestore (`configs/{syncCode}`). Cualquiera que
   tenga el código puede leer y sobreescribir ese documento — no hay
   autenticación ni reglas de propiedad. Si en algún momento se agrega
   auth de usuarios, este es el lugar para revisarlo.
-- **Formato del documento**: `{ customKg: { "ir:gt3": 92, "ac:calle": 61, ... } }`.
+- **Formato del documento**: `{ customKg: { "ir:gt3": 92, "ac:calle": 61, ... }, tieMm: { corta: 38, larga: 51 } }`.
   La clave combina el simulador y el **perfil de freno** (`BRAKES`), para que
   un mismo perfil en distintos sims no pise el valor del otro, y para que
   perfiles distintos (calle vs. rally vs. GT3) nunca compartan valor aunque

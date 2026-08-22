@@ -666,6 +666,11 @@
       );
     }
 
+    // El tie-rod stock de los VRS mide 43 mm: es una constante física del
+    // pedal, no un ajuste. Corta y larga sí son longitudes que el usuario
+    // define (en mm) y aplican a todos los carros por igual.
+    const TIE_STOCK_MM = 43;
+
     // Posición [desde, hasta] de cada valor de tie-rod y preload sobre una
     // escala de 3 pasos; un rango como "Stock a larga" pinta una banda.
     const TIE_LEVELS = {
@@ -677,12 +682,26 @@
       "Leve a moderado": [1, 2], "Moderado": [2, 2],
     };
 
-    function MiniGauge({ title, stops, range, color }) {
+    function MiniGauge({ title, stops, range, color, values, onEdit }) {
       const [lo, hi] = range;
       const pct = (i) => (i / (stops.length - 1)) * 100;
       return (
         <div style={{ flex: 1, minWidth: 130 }}>
-          <div style={{ fontSize: 10, letterSpacing: 1.5, color: "#8B94A1", marginBottom: 6, fontFamily: "'Saira Condensed', sans-serif" }}>{title}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+            <div style={{ fontSize: 10, letterSpacing: 1.5, color: "#8B94A1", fontFamily: "'Saira Condensed', sans-serif" }}>{title}</div>
+            {onEdit && (
+              <button onClick={onEdit} style={{ background: "none", border: "none", color: "#F2B544", fontSize: 11, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
+                modificar
+              </button>
+            )}
+          </div>
+          {values && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, fontWeight: 600, marginBottom: 4 }}>
+              {values.map((v, i) => (
+                <span key={i} style={{ color: v ? "#B9C0CB" : "#4a5260" }}>{v || "— mm"}</span>
+              ))}
+            </div>
+          )}
           <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
             {stops.map((s, i) => (
               <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, top: 1, bottom: 1, width: 2, background: "#3a4250", transform: "translateX(-50%)", borderRadius: 1 }} />
@@ -783,6 +802,13 @@
       const [customKg, setCustomKg] = useState(() => {
         try { return JSON.parse(localStorage.getItem("pitwall_kg") || "{}"); } catch { return {}; }
       });
+      // Longitudes de tie-rod corta/larga en mm, globales para todos los
+      // carros y sims (stock es fijo: TIE_STOCK_MM).
+      const [tieMm, setTieMm] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("pitwall_tie_mm") || "{}"); } catch { return {}; }
+      });
+      const [tieModal, setTieModal] = useState(false);
+      const [tieDraft, setTieDraft] = useState({ corta: "", larga: "" });
       const saveTimer = useRef(null);
       const skipNextSave = useRef(false);
       const fbReady = useRef(false);
@@ -807,26 +833,29 @@
         setSyncing(true);
         CONFIGS.doc(syncCode).get()
           .then(snap => {
-            if (snap.exists && snap.data().customKg) {
-              skipNextSave.current = true;
-              setCustomKg(snap.data().customKg);
+            if (snap.exists) {
+              const d = snap.data();
+              if (d.customKg || d.tieMm) skipNextSave.current = true;
+              if (d.customKg) setCustomKg(d.customKg);
+              if (d.tieMm) setTieMm(d.tieMm);
             }
             setSyncing(false);
           })
           .catch(() => setSyncing(false));
       }, [syncCode, firebaseReady]);
 
-      // Guarda en Firestore + localStorage cada vez que cambia customKg
+      // Guarda en Firestore + localStorage cada vez que cambia customKg o tieMm
       useEffect(() => {
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
+        localStorage.setItem("pitwall_tie_mm", JSON.stringify(tieMm));
         if (!fbReady.current) return;
         if (skipNextSave.current) { skipNextSave.current = false; return; }
         clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
-          CONFIGS.doc(syncCode).set({ customKg }).catch(() => {});
+          CONFIGS.doc(syncCode).set({ customKg, tieMm }).catch(() => {});
         }, 800);
         return () => clearTimeout(saveTimer.current);
-      }, [customKg]);
+      }, [customKg, tieMm]);
 
       const applyCode = () => {
         const c = codeInput.trim().toUpperCase();
@@ -835,6 +864,24 @@
         setSyncCode(c);
         setCodeInput("");
         setShowCodeInput(false);
+      };
+
+      const openTieModal = () => {
+        setTieDraft({ corta: tieMm.corta || "", larga: tieMm.larga || "" });
+        setTieModal(true);
+      };
+      const saveTieMm = () => {
+        const parseMm = (v) => {
+          const n = parseInt(v, 10);
+          return (!v || isNaN(n) || n <= 0) ? undefined : Math.min(n, 200);
+        };
+        const next = {};
+        const c = parseMm(tieDraft.corta);
+        const l = parseMm(tieDraft.larga);
+        if (c) next.corta = c;
+        if (l) next.larga = l;
+        setTieMm(next);
+        setTieModal(false);
       };
 
       const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
@@ -1011,7 +1058,18 @@
                         {rec.spring.nombre}
                       </div>
                       <div style={{ display: "flex", gap: 20, flexWrap: "wrap", margin: "10px 0 12px" }}>
-                        <MiniGauge title="TIE-ROD" stops={["Corta", "Stock", "Larga"]} range={TIE_LEVELS[rec.brake.tie]} color={springColor} />
+                        <MiniGauge
+                          title="TIE-ROD"
+                          stops={["Corta", "Stock", "Larga"]}
+                          range={TIE_LEVELS[rec.brake.tie]}
+                          color={springColor}
+                          values={[
+                            tieMm.corta ? `${tieMm.corta} mm` : null,
+                            `${TIE_STOCK_MM} mm`,
+                            tieMm.larga ? `${tieMm.larga} mm` : null,
+                          ]}
+                          onEdit={openTieModal}
+                        />
                         <MiniGauge title="PRELOAD" stops={["0", "Leve", "Moderado"]} range={PRE_LEVELS[rec.brake.pre]} color={springColor} />
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
@@ -1125,6 +1183,52 @@
                 </div>
               </footer>
             </>
+          )}
+
+          {tieModal && (
+            <div
+              onClick={() => setTieModal(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Modificar longitudes de tie-rod"
+            >
+              <div onClick={(e) => e.stopPropagation()} style={{ background: "#1C2128", border: "1px solid #2A313B", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
+                <div style={{ ...S.blockLabel, marginBottom: 2 }}>TIE-ROD · LONGITUDES</div>
+                <div style={{ fontSize: 12.5, color: "#8B94A1", lineHeight: 1.5, marginBottom: 14 }}>
+                  Stock es fijo ({TIE_STOCK_MM} mm), no se puede cambiar. Corta y larga son tus longitudes medidas en el pedal: aplican a todos los carros y simuladores.
+                </div>
+                {[
+                  ["corta", "Corta"],
+                  ["stock", "Stock"],
+                  ["larga", "Larga"],
+                ].map(([k, label]) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <span style={{ width: 52, fontSize: 13, color: "#B9C0CB" }}>{label}</span>
+                    {k === "stock" ? (
+                      <span style={{ fontSize: 13, color: "#6b7482" }}>{TIE_STOCK_MM} mm · fijo</span>
+                    ) : (
+                      <>
+                        <input
+                          type="number" min="1" max="200"
+                          placeholder="mm"
+                          value={tieDraft[k]}
+                          onChange={(e) => setTieDraft((prev) => ({ ...prev, [k]: e.target.value }))}
+                          onKeyDown={(e) => e.key === "Enter" && saveTieMm()}
+                          autoFocus={k === "corta"}
+                          style={{ width: 70, background: "#2A313B", border: "1px solid #3a4250", borderRadius: 4, color: "#E8E6E0", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                        />
+                        <span style={{ fontSize: 12, color: "#8B94A1" }}>mm</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                  <button onClick={() => setTieModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
+                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 }}>Guardar</button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       );
