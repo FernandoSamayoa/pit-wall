@@ -684,7 +684,13 @@
 
     function MiniGauge({ title, stops, range, color, values, onEdit }) {
       const [lo, hi] = range;
-      const pct = (i) => (i / (stops.length - 1)) * 100;
+      const last = stops.length - 1;
+      const pct = (i) => (i / last) * 100;
+      // La barra ocupa el ancho completo, alineada con el resto del bloque.
+      // Los elementos de los extremos se anclan hacia adentro (el primero
+      // pegado al borde izquierdo, el último al derecho) para que nada
+      // sobresalga de la barra; solo los intermedios van centrados.
+      const anchor = (i) => (i === 0 ? "translateX(0)" : i === last ? "translateX(-100%)" : "translateX(-50%)");
       return (
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
@@ -695,37 +701,34 @@
               </button>
             )}
           </div>
-          {/* La barra va remetida (margin lateral) para que los puntos y las
-              etiquetas de los extremos, centrados sobre cada marca con
-              translateX(-50%), queden alineados entre sí sin desbordar. */}
-          <div style={{ position: "relative", margin: "0 26px" }}>
-            {values && (
-              <div style={{ position: "relative", height: 15, marginBottom: 3 }}>
-                {values.map((v, i) => (
-                  <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: "translateX(-50%)", whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
-                    {v || "— mm"}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
-              {stops.map((s, i) => (
-                <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, top: 1, bottom: 1, width: 2, background: "#3a4250", transform: "translateX(-50%)", borderRadius: 1 }} />
-              ))}
-              {hi > lo && (
-                <div style={{ position: "absolute", left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%`, top: 0, bottom: 0, background: color, borderRadius: 4 }} />
-              )}
-              {[...(hi > lo ? [lo, hi] : [lo])].map((i) => (
-                <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", background: color, transform: "translateX(-50%)", boxShadow: "0 0 0 2px #14171C" }} />
-              ))}
-            </div>
-            <div style={{ position: "relative", height: 14, marginTop: 6 }}>
-              {stops.map((s, i) => (
-                <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, transform: "translateX(-50%)", whiteSpace: "nowrap", fontSize: 10, color: i >= lo && i <= hi ? "#E8E6E0" : "#6b7482", fontWeight: i >= lo && i <= hi ? 700 : 400 }}>
-                  {s}
+          {values && (
+            <div style={{ position: "relative", height: 15, marginBottom: 3 }}>
+              {values.map((v, i) => (
+                <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
+                  {v || "— mm"}
                 </span>
               ))}
             </div>
+          )}
+          <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
+            {stops.map((s, i) => (
+              i > 0 && i < last && (
+                <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, top: 1, bottom: 1, width: 2, background: "#3a4250", transform: "translateX(-50%)", borderRadius: 1 }} />
+              )
+            ))}
+            {hi > lo && (
+              <div style={{ position: "absolute", left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%`, top: 0, bottom: 0, background: color, borderRadius: 4 }} />
+            )}
+            {[...(hi > lo ? [lo, hi] : [lo])].map((i) => (
+              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", background: color, transform: anchor(i), boxShadow: "0 0 0 2px #14171C" }} />
+            ))}
+          </div>
+          <div style={{ position: "relative", height: 14, marginTop: 6 }}>
+            {stops.map((s, i) => (
+              <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10, color: i >= lo && i <= hi ? "#E8E6E0" : "#6b7482", fontWeight: i >= lo && i <= hi ? 700 : 400 }}>
+                {s}
+              </span>
+            ))}
           </div>
         </div>
       );
