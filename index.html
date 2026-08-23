@@ -701,15 +701,15 @@
               </button>
             )}
           </div>
-          {values && (
-            <div style={{ position: "relative", height: 15, marginBottom: 3 }}>
-              {values.map((v, i) => (
-                <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
-                  {v || "— mm"}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* La fila de valores se renderiza siempre (vacía si no hay) para
+              que las barras de gauges vecinos queden a la misma altura. */}
+          <div style={{ position: "relative", height: 15, marginBottom: 3 }}>
+            {values && values.map((v, i) => (
+              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
+                {v || "— mm"}
+              </span>
+            ))}
+          </div>
           <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
             {stops.map((s, i) => (
               i > 0 && i < last && (
