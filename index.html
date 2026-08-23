@@ -681,6 +681,7 @@
       "0": [0, 0], "0 a leve": [0, 1], "Leve": [1, 1],
       "Leve a moderado": [1, 2], "Moderado": [2, 2],
     };
+    const PRE_STOPS = ["0", "Leve", "Moderado"];
 
     function MiniGauge({ title, stops, range, color, values, onEdit }) {
       const [lo, hi] = range;
@@ -705,9 +706,13 @@
               que las barras de gauges vecinos queden a la misma altura. */}
           <div style={{ position: "relative", height: 15, marginBottom: 3 }}>
             {values && values.map((v, i) => (
-              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
-                {v || "— mm"}
-              </span>
+              // undefined = posición sin valor aplicable (no se muestra nada);
+              // null = aplicable pero sin definir ("— mm"); string = el valor.
+              v === undefined ? null : (
+                <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, transform: anchor(i), whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, color: v ? "#B9C0CB" : "#4a5260" }}>
+                  {v || "— mm"}
+                </span>
+              )
             ))}
           </div>
           <div style={{ position: "relative", height: 8, background: "#2A313B", borderRadius: 4 }}>
@@ -821,6 +826,13 @@
       });
       const [tieModal, setTieModal] = useState(false);
       const [tieDraft, setTieDraft] = useState({ corta: "", larga: "" });
+      // Preload en mm por combinación física "resorte|tie-rod|nivel":
+      // el mismo valor aplica a todos los carros que compartan combinación.
+      const [preMm, setPreMm] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("pitwall_pre_mm") || "{}"); } catch { return {}; }
+      });
+      const [preModal, setPreModal] = useState(false);
+      const [preDraft, setPreDraft] = useState({});
       const saveTimer = useRef(null);
       const skipNextSave = useRef(false);
       const fbReady = useRef(false);
@@ -847,27 +859,29 @@
           .then(snap => {
             if (snap.exists) {
               const d = snap.data();
-              if (d.customKg || d.tieMm) skipNextSave.current = true;
+              if (d.customKg || d.tieMm || d.preMm) skipNextSave.current = true;
               if (d.customKg) setCustomKg(d.customKg);
               if (d.tieMm) setTieMm(d.tieMm);
+              if (d.preMm) setPreMm(d.preMm);
             }
             setSyncing(false);
           })
           .catch(() => setSyncing(false));
       }, [syncCode, firebaseReady]);
 
-      // Guarda en Firestore + localStorage cada vez que cambia customKg o tieMm
+      // Guarda en Firestore + localStorage cada vez que cambian los ajustes
       useEffect(() => {
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
         localStorage.setItem("pitwall_tie_mm", JSON.stringify(tieMm));
+        localStorage.setItem("pitwall_pre_mm", JSON.stringify(preMm));
         if (!fbReady.current) return;
         if (skipNextSave.current) { skipNextSave.current = false; return; }
         clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
-          CONFIGS.doc(syncCode).set({ customKg, tieMm }).catch(() => {});
+          CONFIGS.doc(syncCode).set({ customKg, tieMm, preMm }).catch(() => {});
         }, 800);
         return () => clearTimeout(saveTimer.current);
-      }, [customKg, tieMm]);
+      }, [customKg, tieMm, preMm]);
 
       const applyCode = () => {
         const c = codeInput.trim().toUpperCase();
@@ -894,6 +908,37 @@
         if (l) next.larga = l;
         setTieMm(next);
         setTieModal(false);
+      };
+
+      // Clave física del preload y niveles que aplican al carro seleccionado
+      const preKeyOf = (r, lvl) => `${r.springKey}|${r.brake.tie}|${lvl}`;
+      const preLevelsOf = (r) => {
+        const [plo, phi] = PRE_LEVELS[r.brake.pre];
+        const arr = [];
+        for (let i = plo; i <= phi; i++) arr.push(i);
+        return arr;
+      };
+      const openPreModal = () => {
+        const draft = {};
+        preLevelsOf(rec).forEach((l) => { draft[l] = preMm[preKeyOf(rec, l)] || ""; });
+        setPreDraft(draft);
+        setPreModal(true);
+      };
+      const savePreMm = () => {
+        const parseMm = (v) => {
+          const n = parseInt(v, 10);
+          return (!v || isNaN(n) || n <= 0) ? undefined : Math.min(n, 50);
+        };
+        setPreMm((prev) => {
+          const next = { ...prev };
+          Object.entries(preDraft).forEach(([lvl, val]) => {
+            const k = preKeyOf(rec, lvl);
+            const n = parseMm(val);
+            if (n) next[k] = n; else delete next[k];
+          });
+          return next;
+        });
+        setPreModal(false);
       };
 
       const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
@@ -1082,7 +1127,19 @@
                           ]}
                           onEdit={openTieModal}
                         />
-                        <MiniGauge title="PRELOAD" stops={["0", "Leve", "Moderado"]} range={PRE_LEVELS[rec.brake.pre]} color={springColor} />
+                        <MiniGauge
+                          title="PRELOAD"
+                          stops={PRE_STOPS}
+                          range={PRE_LEVELS[rec.brake.pre]}
+                          color={springColor}
+                          values={PRE_STOPS.map((_, i) => {
+                            const [plo, phi] = PRE_LEVELS[rec.brake.pre];
+                            if (i < plo || i > phi) return undefined;
+                            const v = preMm[preKeyOf(rec, i)];
+                            return v ? `${v} mm` : null;
+                          })}
+                          onEdit={openPreModal}
+                        />
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
                         Rango sugerido: ~{rec.kg} kg
@@ -1238,6 +1295,46 @@
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setTieModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
                   <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 }}>Guardar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {preModal && rec && (
+            <div
+              onClick={() => setPreModal(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Modificar preload en milímetros"
+            >
+              <div onClick={(e) => e.stopPropagation()} style={{ background: "#1C2128", border: "1px solid #2A313B", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
+                <div style={{ ...S.blockLabel, marginBottom: 2 }}>PRELOAD · MILÍMETROS</div>
+                <div style={{ fontSize: 12.5, color: "#8B94A1", lineHeight: 1.5, marginBottom: 14 }}>
+                  Valor para la combinación{" "}
+                  <strong style={{ color: rec.springKey === "rojo" ? "#E8604C" : "#6B9BE3" }}>resorte {rec.springKey}</strong>
+                  {" · "}
+                  <strong style={{ color: "#B9C0CB" }}>tie-rod {rec.brake.tie.toLowerCase()}</strong>.
+                  Se guarda una sola vez y aplica a todos los carros que compartan esta combinación.
+                </div>
+                {preLevelsOf(rec).map((lvl) => (
+                  <div key={lvl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <span style={{ width: 84, fontSize: 13, color: "#B9C0CB" }}>Preload {PRE_STOPS[lvl]}</span>
+                    <input
+                      type="number" min="1" max="50"
+                      placeholder="mm"
+                      value={preDraft[lvl] || ""}
+                      onChange={(e) => setPreDraft((prev) => ({ ...prev, [lvl]: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && savePreMm()}
+                      autoFocus={lvl === preLevelsOf(rec)[0]}
+                      style={{ width: 70, background: "#2A313B", border: "1px solid #3a4250", borderRadius: 4, color: "#E8E6E0", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                    />
+                    <span style={{ fontSize: 12, color: "#8B94A1" }}>mm</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                  <button onClick={() => setPreModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
+                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
