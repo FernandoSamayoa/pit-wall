@@ -682,6 +682,7 @@
       "Leve a moderado": [1, 2], "Moderado": [2, 2],
     };
     const PRE_STOPS = ["0", "Leve", "Moderado"];
+    const TIE_STOPS = ["Corta", "Stock", "Larga"];
 
     function MiniGauge({ title, stops, range, color, values, onEdit }) {
       const [lo, hi] = range;
@@ -804,6 +805,8 @@
       const [cat, setCat] = useState("todas");
       const [trans, setTrans] = useState("todas");
       const [spring, setSpring] = useState("todas");
+      const [tie, setTie] = useState("todas");
+      const [pre, setPre] = useState("todas");
       const [q, setQ] = useState("");
       const [sel, setSel] = useState(null);
       const [syncCode, setSyncCode] = useState(() => {
@@ -957,14 +960,30 @@
 
       const lista = useMemo(() => {
         const ql = q.trim().toLowerCase();
+        const brakeOf = (x) => BRAKES[x.b || CATS[x.cat].b];
+        // Un perfil con rango (ej. tie "Stock a larga") coincide con
+        // cualquiera de las posiciones que cubre.
+        const tieOk = (x) => {
+          if (tie === "todas") return true;
+          const [tlo, thi] = TIE_LEVELS[brakeOf(x).tie];
+          const i = TIE_STOPS.indexOf(tie);
+          return i >= tlo && i <= thi;
+        };
+        const preOk = (x) => {
+          if (pre === "todas") return true;
+          const [plo, phi] = PRE_LEVELS[brakeOf(x).pre];
+          const i = PRE_STOPS.indexOf(pre);
+          return i >= plo && i <= phi;
+        };
         return data
           .filter((x) =>
             (cat === "todas" || x.cat === cat) &&
             (trans === "todas" || TRANS_GROUPS[trans](x.t)) &&
             (spring === "todas" || (x.s || BRAKES[x.b || CATS[x.cat].b].s) === spring) &&
+            tieOk(x) && preOk(x) &&
             (!ql || x.n.toLowerCase().includes(ql)))
           .sort((a, b) => a.n.localeCompare(b.n));
-      }, [sim, cat, trans, spring, q]);
+      }, [sim, cat, trans, spring, tie, pre, q]);
 
       const rec = sel ? recomendar(sel) : null;
 
@@ -1032,7 +1051,7 @@
                 key={k}
                 role="tab"
                 aria-selected={sim === k}
-                onClick={() => { setSim(k); setCat("todas"); setTrans("todas"); setSpring("todas"); setSel(null); }}
+                onClick={() => { setSim(k); setCat("todas"); setTrans("todas"); setSpring("todas"); setTie("todas"); setPre("todas"); setSel(null); }}
                 style={{ ...S.tab, ...(sim === k ? S.tabOn : {}) }}
               >
                 <span style={{ fontFamily: "'Saira Condensed'", fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>{t}</span>
@@ -1117,7 +1136,7 @@
                       <div style={{ display: "flex", gap: 20, flexWrap: "wrap", margin: "10px 0 12px" }}>
                         <MiniGauge
                           title="TIE-ROD"
-                          stops={["Corta", "Stock", "Larga"]}
+                          stops={TIE_STOPS}
                           range={TIE_LEVELS[rec.brake.tie]}
                           color={springColor}
                           values={[
@@ -1217,6 +1236,22 @@
                     Resorte azul (blando)
                   </span>
                 </button>
+              </div>
+              <div className="chipbar" style={{ marginTop: 2 }}>
+                <button onClick={() => setTie("todas")} style={{ ...S.chip, ...(tie === "todas" ? S.chipTrans : {}) }}>Cualquier tie-rod</button>
+                {TIE_STOPS.map((t) => (
+                  <button key={t} onClick={() => setTie(t)} style={{ ...S.chip, ...(tie === t ? S.chipTrans : {}) }}>
+                    Tie-rod {t.toLowerCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="chipbar" style={{ marginTop: 2 }}>
+                <button onClick={() => setPre("todas")} style={{ ...S.chip, ...(pre === "todas" ? S.chipTrans : {}) }}>Cualquier preload</button>
+                {PRE_STOPS.map((p) => (
+                  <button key={p} onClick={() => setPre(p)} style={{ ...S.chip, ...(pre === p ? S.chipTrans : {}) }}>
+                    Preload {p.toLowerCase()}
+                  </button>
+                ))}
               </div>
 
               <div role="list">
