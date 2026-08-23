@@ -167,6 +167,8 @@ final de `gearboxOf`).
 | `customKg` | Mapa `"sim:perfilDeFreno" -> valorEnKg` con los valores reales que el usuario ingresó (p. ej. `"ir:gt3": 92`). |
 | `tieMm` | `{ corta?, larga? }` en mm: longitudes de tie-rod del usuario, **globales** (un solo valor para todos los carros y sims). El stock es la constante `TIE_STOCK_MM` (43 mm) y nunca cambia. |
 | `tieModal`, `tieDraft` | Visibilidad y valores en edición de la ventana "modificar" del tie-rod. |
+| `preMm` | Mapa `"resorte\|tieRod\|nivel" -> mm` con los valores de preload del usuario, por **combinación física** (p. ej. `"rojo\|Stock a corta\|1": 9`). El nivel es el índice en `PRE_STOPS` (`0`=0, `1`=Leve, `2`=Moderado); todos los carros que compartan la combinación muestran el mismo valor. |
+| `preModal`, `preDraft` | Visibilidad y valores en edición de la ventana "modificar" del preload; la modal solo ofrece los niveles que aplican al carro seleccionado (uno para nivel fijo, dos para rangos como "0 a leve"). |
 
 ### Efectos (`useEffect`)
 
@@ -177,7 +179,8 @@ final de `gearboxOf`).
 2. **Cuando cambia `syncCode` o `firebaseReady`**: lee el documento
    `configs/{syncCode}` de Firestore y, si tiene `customKg`, lo carga (con
    un flag `skipNextSave` para no volver a escribir lo que se acaba de leer).
-3. **Cuando cambia `customKg`**: lo guarda siempre en `localStorage`, y —si
+3. **Cuando cambia `customKg`, `tieMm` o `preMm`**: los guarda siempre en
+   `localStorage` (`pitwall_kg`, `pitwall_tie_mm`, `pitwall_pre_mm`), y —si
    Firebase está listo— programa una escritura a Firestore con *debounce* de
    800ms (`saveTimer`) para no escribir en cada tecla.
 
@@ -200,20 +203,32 @@ final de `gearboxOf`).
 
 ## 7. Sincronización (Firebase) {#sincronización-firebase}
 
-- **Qué se sincroniza**: `customKg` (valores reales de freno) y `tieMm`
-  (longitudes corta/larga del tie-rod, en mm). Todo lo demás (filtros,
-  selección) es efímero y no se persiste.
+- **Qué se sincroniza**: `customKg` (valores reales de freno), `tieMm`
+  (longitudes corta/larga del tie-rod, en mm) y `preMm` (preload en mm por
+  combinación resorte + tie-rod + nivel). Todo lo demás (filtros, selección)
+  es efímero y no se persiste.
 - **Cómo se identifica un dispositivo/usuario**: no hay login. El
   "código de sync" (`XXXX-999`) generado por `genSyncCode()` es literalmente
   la clave del documento en Firestore (`configs/{syncCode}`). Cualquiera que
   tenga el código puede leer y sobreescribir ese documento — no hay
   autenticación ni reglas de propiedad. Si en algún momento se agrega
   auth de usuarios, este es el lugar para revisarlo.
-- **Formato del documento**: `{ customKg: { "ir:gt3": 92, "ac:calle": 61, ... }, tieMm: { corta: 38, larga: 51 } }`.
-  La clave combina el simulador y el **perfil de freno** (`BRAKES`), para que
-  un mismo perfil en distintos sims no pise el valor del otro, y para que
-  perfiles distintos (calle vs. rally vs. GT3) nunca compartan valor aunque
-  usen el mismo resorte o el mismo rango de kg.
+- **Formato del documento**:
+
+  ```js
+  {
+    customKg: { "ir:gt3": 92, "ac:calle": 61, ... },
+    tieMm: { corta: 38, larga: 51 },
+    preMm: { "rojo|Larga|2": 12, "rojo|Stock a corta|0": 7, ... },
+  }
+  ```
+
+  La clave de `customKg` combina el simulador y el **perfil de freno**
+  (`BRAKES`), para que un mismo perfil en distintos sims no pise el valor
+  del otro, y para que perfiles distintos (calle vs. rally vs. GT3) nunca
+  compartan valor aunque usen el mismo resorte o el mismo rango de kg. La
+  clave de `preMm` es la combinación física `resorte|tieRod|nivel`, común a
+  todos los sims: dos carros con la misma combinación comparten el valor.
 - **Config de Firebase**: no está hardcodeada en `index.html`. Se pide en
   runtime a `/api/config` ([`api/config.js`](../api/config.js)), que lee
   `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` y `FIREBASE_PROJECT_ID` de las
