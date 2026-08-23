@@ -158,7 +158,7 @@ final de `gearboxOf`).
 | Estado | Para qué |
 |---|---|
 | `sim` | Pestaña activa (`"ir" \| "ac" \| "acr" \| "ams"`). |
-| `cat`, `trans`, `spring` | Filtros activos de categoría / transmisión / resorte. |
+| `cat`, `trans`, `spring`, `tie`, `pre` | Filtros activos de categoría / transmisión / resorte / tie-rod / preload. Los de tie-rod y preload comparan contra el rango del perfil de freno (`TIE_LEVELS` / `PRE_LEVELS`): un perfil "Stock a larga" coincide con los filtros Stock y Larga. |
 | `q` | Texto de búsqueda. |
 | `sel` | Carro seleccionado (si hay uno, se muestra la ficha en vez de la lista). |
 | `syncCode` | Código de 8 caracteres para sincronizar entre dispositivos; se genera una vez y se persiste en `localStorage`. |
@@ -190,16 +190,16 @@ final de `gearboxOf`).
   `ACRALLY` / `AMS2`).
 - `cats`: categorías presentes en `data`, en el orden en que aparecen en
   `CATS` (para que los chips de filtro salgan en un orden consistente).
-- `lista`: `data` filtrado por categoría/transmisión/resorte/búsqueda y
-  ordenado alfabéticamente.
+- `lista`: `data` filtrado por categoría/transmisión/resorte/tie-rod/
+  preload/búsqueda y ordenado alfabéticamente.
 
 ### Render
 
 - Si `sel` tiene un carro: muestra la ficha (`S.card`) con bloques de
   VOLANTE, CAMBIO, CAJA DE CAMBIOS (solo iRacing), FRENO VRS (con el input
   de kg reales y la barra de presión) y NOTAS DE BOXES.
-- Si no: muestra buscador, chips de categoría/transmisión/resorte y la lista
-  de carros filtrada, con un footer fijo de leyenda.
+- Si no: muestra buscador, chips de categoría/transmisión/resorte/tie-rod/
+  preload y la lista de carros filtrada, con un footer fijo de leyenda.
 
 ## 7. Sincronización (Firebase) {#sincronización-firebase}
 
