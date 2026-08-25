@@ -97,7 +97,7 @@ Tabla completa (resorte / tie-rod / preload / kg):
 | `gt4` | Rojo | Corta | 0 a leve | 75–100 |
 | `raceNoServo` | Rojo | Stock | 0 a leve | 85–110 |
 | `gt3` | Rojo | Stock | Leve | 85–110 |
-| `gte` | Rojo | Stock a larga | Leve a moderado | 90–120 |
+| `gte` | Rojo | Stock | Moderado | 90–120 |
 | `supercars` | Rojo | Stock | Leve | 90–120 |
 | `proto` | Rojo | Larga | Moderado | 100–130 |
 | `formula` | Rojo | Larga | Moderado | 110–140 |

@@ -595,7 +595,7 @@
       },
       gte: {
         nombre: "GTE / GT1 / GT2",
-        s: "rojo", tie: "Stock a larga", pre: "Leve a moderado", kg: "90–120",
+        s: "rojo", tie: "Stock", pre: "Moderado", kg: "90–120",
         porque: "Downforce y velocidades más altas, cercano a prototipo: pedal firme, sensación de 'muro'.",
       },
       supercars: {
@@ -682,6 +682,34 @@
       "Leve a moderado": [1, 2], "Moderado": [2, 2],
     };
     const PRE_STOPS = ["0", "Leve", "Moderado"];
+
+    /* Cuando un perfil cambia de tie-rod o de nivel de preload, la clave
+       "resorte|tieRod|nivel" con la que el usuario guardó sus milímetros deja
+       de existir. Estas reglas renombran las claves viejas a la nueva para no
+       perder mediciones ya hechas; el primer valor encontrado en el orden de
+       la lista gana. Es idempotente: si la clave nueva ya tiene valor, no la
+       toca. */
+    const PRE_MIGRACIONES = [
+      // GTE/GT1/GT2 pasó de "Stock a larga · Leve a moderado" a "Stock · Moderado"
+      { desde: ["rojo|Stock a larga|2", "rojo|Stock a larga|1"], hacia: "rojo|Stock|2" },
+      // GT4 pasó de "Stock a corta" a "Corta" (tabla de referencia)
+      { desde: ["rojo|Stock a corta|0"], hacia: "rojo|Corta|0" },
+      { desde: ["rojo|Stock a corta|1"], hacia: "rojo|Corta|1" },
+    ];
+
+    function migrarPreMm(guardado) {
+      if (!guardado || typeof guardado !== "object") return {};
+      const next = { ...guardado };
+      let cambio = false;
+      for (const { desde, hacia } of PRE_MIGRACIONES) {
+        const origen = desde.find((k) => next[k]);
+        if (!origen) continue;
+        if (!next[hacia]) next[hacia] = next[origen];
+        desde.forEach((k) => { delete next[k]; });
+        cambio = true;
+      }
+      return cambio ? next : guardado;
+    }
     const TIE_STOPS = ["Corta", "Stock", "Larga"];
 
     function MiniGauge({ title, stops, range, color, values, onEdit }) {
@@ -833,7 +861,7 @@
       // Preload en mm por combinación física "resorte|tie-rod|nivel":
       // el mismo valor aplica a todos los carros que compartan combinación.
       const [preMm, setPreMm] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("pitwall_pre_mm") || "{}"); } catch { return {}; }
+        try { return migrarPreMm(JSON.parse(localStorage.getItem("pitwall_pre_mm") || "{}")); } catch { return {}; }
       });
       const [preModal, setPreModal] = useState(false);
       const [preDraft, setPreDraft] = useState({});
@@ -866,7 +894,7 @@
               if (d.customKg || d.tieMm || d.preMm) skipNextSave.current = true;
               if (d.customKg) setCustomKg(d.customKg);
               if (d.tieMm) setTieMm(d.tieMm);
-              if (d.preMm) setPreMm(d.preMm);
+              if (d.preMm) setPreMm(migrarPreMm(d.preMm));
             }
             setSyncing(false);
           })

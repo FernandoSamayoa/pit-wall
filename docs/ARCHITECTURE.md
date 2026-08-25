@@ -158,7 +158,7 @@ final de `gearboxOf`).
 | Estado | Para qué |
 |---|---|
 | `sim` | Pestaña activa (`"ir" \| "ac" \| "acr" \| "ams"`). |
-| `cat`, `trans`, `spring`, `tie`, `pre` | Filtros activos de categoría / transmisión / resorte / tie-rod / preload. Los de tie-rod y preload comparan contra el rango del perfil de freno (`TIE_LEVELS` / `PRE_LEVELS`): un perfil "Stock a larga" coincide con los filtros Stock y Larga. |
+| `cat`, `trans`, `spring`, `tie`, `pre` | Filtros activos de categoría / transmisión / resorte / tie-rod / preload. Los de tie-rod y preload comparan contra el rango del perfil de freno (`TIE_LEVELS` / `PRE_LEVELS`): un perfil con rango como "0 a leve" coincide con los filtros 0 y Leve. |
 | `q` | Texto de búsqueda. |
 | `sel` | Carro seleccionado (si hay uno, se muestra la ficha en vez de la lista). |
 | `syncCode` | Código de 8 caracteres para sincronizar entre dispositivos; se genera una vez y se persiste en `localStorage`. |
@@ -167,7 +167,7 @@ final de `gearboxOf`).
 | `customKg` | Mapa `"sim:perfilDeFreno" -> valorEnKg` con los valores reales que el usuario ingresó (p. ej. `"ir:gt3": 92`). |
 | `tieMm` | `{ corta?, larga? }` en mm: longitudes de tie-rod del usuario, **globales** (un solo valor para todos los carros y sims). El stock es la constante `TIE_STOCK_MM` (43 mm) y nunca cambia. |
 | `tieModal`, `tieDraft` | Visibilidad y valores en edición de la ventana "modificar" del tie-rod. |
-| `preMm` | Mapa `"resorte\|tieRod\|nivel" -> mm` con los valores de preload del usuario, por **combinación física** (p. ej. `"rojo\|Corta\|1": 9`). El nivel es el índice en `PRE_STOPS` (`0`=0, `1`=Leve, `2`=Moderado); todos los carros que compartan la combinación muestran el mismo valor. |
+| `preMm` | Mapa `"resorte\|tieRod\|nivel" -> mm` con los valores de preload del usuario, por **combinación física** (p. ej. `"rojo\|Corta\|1": 9`). El nivel es el índice en `PRE_STOPS` (`0`=0, `1`=Leve, `2`=Moderado); todos los carros que compartan la combinación muestran el mismo valor. Si un perfil cambia de tie-rod o de nivel, la clave vieja se renombra al cargar con `migrarPreMm()` / `PRE_MIGRACIONES` para no perder los milímetros ya medidos. |
 | `preModal`, `preDraft` | Visibilidad y valores en edición de la ventana "modificar" del preload; la modal solo ofrece los niveles que aplican al carro seleccionado (uno para nivel fijo, dos para rangos como "0 a leve"). |
 
 ### Efectos (`useEffect`)
