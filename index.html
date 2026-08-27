@@ -41,7 +41,7 @@
        Hardware: Pedales VRS Pro (resorte azul/rojo) · Fanatec
        Volantes: Redondo 332mm+Button Rally Module · CSL GT3 · Formula 2.5X · Podium 330mm
        Palanca Fanatec H/secuencial
-       Listas: iRacing 2026 S3 · AC EVO v0.8
+       Listas: iRacing 2026 S3 · AC EVO v0.9
        ============================================================ */
 
     // ---- Códigos de transmisión ----
@@ -266,6 +266,7 @@
       c("BMW M4 CSL", "hiper", 2022, "L", "El M4 más radical, automático de levas.", { w: "podium" }),
       c("BMW M8 Competition", "hiper", 2020, "L", "GT de 625 CV, automático con levas.", { w: "podium" }),
       c("Mercedes-Benz AMG GT 63 (C192)", "hiper", 2024, "L", "Anunciado para próximas versiones."),
+      c("Audi R8 V10 performance quattro (nuevo v0.9)", "hiper", 2022, "L", "El último R8 de calle antes de descontinuarse: V10 atmosférico de 620 CV, quattro y S tronic de 7 velocidades sin pedal de embrague. Añadido en la v0.9."),
 
       // ---------- CLÁSICOS ----------
       c("Alfa Romeo 75 Turbo Evoluzione", "clasico", 1987, "H", "Berlina turbo homologación Grupo A. Transaxle y H."),
@@ -282,6 +283,7 @@
       c("Lancia Delta HF Integrale Evo II (+ Evo 3 proto)", "rally", 1993, "H", "El rey del Grupo A en calle. AWD y palanca en H.", { notas: ["Aro redondo + Rally Module: es un Lancia de rally, llévalo como tal."] }),
       c("Mercedes-Benz 190E Evo II", "clasico", 1990, "HD", "El rival del E30 en DTM, versión calle. Caja dogleg."),
       c("Mazda MX-5 (NA)", "clasico", 1989, "H", "El roadster que enseñó a conducir a una generación."),
+      c("Mazda RX-7 FD Spirit R Type A (nuevo v0.9)", "clasico", 2002, "H", "La edición final y más extrema del FD, con apenas 1.500 unidades: rotativo biturbo 13B-REW de 280 CV, manual de 5 y de fábrica frenos más grandes, mangueras de freno trenzadas y amortiguadores Bilstein. Añadido en la v0.9."),
       c("Peugeot 205 T16", "rally", 1984, "H", "Grupo B de verdad: central, turbo y AWD. Respeto máximo.", { notas: ["Grupo B con Rally Module: gas con cuidado, el turbo entra de golpe."] }),
       c("Porsche 911 Turbo 3.6 (964) (+ Power Package)", "clasico", 1993, "H", "El viudo-maker: turbo trasero y H de 5."),
       c("Renault 5 GT Turbo (+ Raider)", "clasico", 1987, "H", "GTI francés turbo: ligero y pícaro."),
@@ -305,6 +307,7 @@
       c("Porsche 911 GT2 RS Clubsport Evo", "gt2", 2019, "L", "Track car de copa con 700 CV."),
       c("Porsche 935 (2018) (nuevo v0.7)", "gt2", 2018, "L", "Homenaje al Moby Dick sobre base GT2 RS. Añadido en v0.7."),
       c("KTM X-Bow GT2 (nuevo v0.8)", "gt2", 2021, "L", "La expresión más extrema del GT2 moderno: carbono y 5 cilindros turbo. Añadido en la v0.8."),
+      c("Audi R8 LMS GT2 (nuevo v0.9)", "gt2", 2019, "L", "GT2 de cliente basado en el R8 Spyder de calle: V10 atmosférico de 640 CV y tracción trasera (a diferencia del quattro de calle). Añadido en la v0.9."),
       c("Porsche 911 GT3 Cup (992) — base / ABS / ABS+TC", "copa", 2021, "L", "Tres variantes de electrónica. La base, sin ABS, es la exigente.", { notas: ["En la variante base (sin ABS) el resorte rojo marca la diferencia en la dosificación."] }),
       c("Ferrari 488 Challenge Evo", "copa", 2020, "L", "Copa Ferrari: rápido y con ABS de competición."),
       c("Lamborghini Huracán Super Trofeo EVO 2", "copa", 2021, "L", "La copa de Lamborghini."),
@@ -1112,7 +1115,7 @@
           </div>
 
           <div style={S.tabs} role="tablist">
-            {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.8"], ["acr", "AC Rally", "v0.5"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
+            {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.9"], ["acr", "AC Rally", "v0.5"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
               <button
                 key={k}
                 role="tab"
@@ -1371,7 +1374,7 @@
                   <span style={{ ...S.dot, background: "#D9442E" }} /> rojo = resorte duro
                 </span>
                 <div style={{ marginTop: 10 }}>
-                  Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.8 · AC Rally v0.4 · AMS2 v1.6 (por clases)
+                  Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.9 · AC Rally v0.4 · AMS2 v1.6 (por clases)
                 </div>
               </footer>
             </>
