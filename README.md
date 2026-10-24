@@ -52,7 +52,10 @@ sin paso de build.
 
 1. El usuario elige el simulador en las pestañas de arriba (`iRacing`,
    `AC EVO`, `AC Rally`, `AMS2`).
-2. Busca o filtra el carro (por categoría, tipo de cambio o resorte).
+2. Busca o filtra el carro (por categoría, tipo de cambio o resorte). En
+   "Mi setup" puede guardar el resorte, tie-rod y preload que tiene montados
+   ahora y filtrar con un toque los carros (de cualquier simulador) que
+   funcionan con esa configuración.
 3. Al elegir un carro, `recomendar(car)` calcula el aro, el modo de palanca,
    el resorte sugerido y notas adicionales, combinando datos del carro con
    los valores por defecto de su categoría.
