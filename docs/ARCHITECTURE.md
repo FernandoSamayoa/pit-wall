@@ -169,6 +169,9 @@ final de `gearboxOf`).
 | `tieModal`, `tieDraft` | Visibilidad y valores en edición de la ventana "modificar" del tie-rod. |
 | `preMm` | Mapa `"resorte\|tieRod\|nivel" -> mm` con los valores de preload del usuario, por **combinación física** (p. ej. `"rojo\|Corta\|1": 9`). El nivel es el índice en `PRE_STOPS` (`0`=0, `1`=Leve, `2`=Moderado); todos los carros que compartan la combinación muestran el mismo valor. Si un perfil cambia de tie-rod o de nivel, la clave vieja se renombra al cargar con `migrarPreMm()` / `PRE_MIGRACIONES` para no perder los milímetros ya medidos. |
 | `preModal`, `preDraft` | Visibilidad y valores en edición de la ventana "modificar" del preload; la modal solo ofrece los niveles que aplican al carro seleccionado (uno para nivel fijo, dos para rangos como "0 a leve"). |
+| `miSetup` | `{ spring?, tie?, pre? }`: el resorte (`"rojo"`/`"azul"`), tie-rod (`TIE_STOPS`) y preload (`PRE_STOPS`) que el usuario tiene montados **ahora**. Global (no depende del sim ni del carro) y todos los campos son opcionales. Se limpia con `sanearSetup()` al leerlo de `localStorage` o Firestore, así que un valor corrupto o desconocido se descarta. |
+| `miSetupOn` | Si la lista se está filtrando por `miSetup`. Solo filtran los campos definidos, con la misma lógica de rangos que los filtros manuales (un perfil "0 a leve" coincide con 0 y Leve), y se suma a los demás filtros. A diferencia de ellos, **no se resetea al cambiar de pestaña**, para poder comparar sims con el mismo setup. |
+| `setupModal`, `setupDraft` | Visibilidad y valores en edición de la ventana "Mi setup actual". |
 
 ### Efectos (`useEffect`)
 
@@ -179,8 +182,9 @@ final de `gearboxOf`).
 2. **Cuando cambia `syncCode` o `firebaseReady`**: lee el documento
    `configs/{syncCode}` de Firestore y, si tiene `customKg`, lo carga (con
    un flag `skipNextSave` para no volver a escribir lo que se acaba de leer).
-3. **Cuando cambia `customKg`, `tieMm` o `preMm`**: los guarda siempre en
-   `localStorage` (`pitwall_kg`, `pitwall_tie_mm`, `pitwall_pre_mm`), y —si
+3. **Cuando cambia `customKg`, `tieMm`, `preMm` o `miSetup`**: los guarda siempre en
+   `localStorage` (`pitwall_kg`, `pitwall_tie_mm`, `pitwall_pre_mm`,
+   `pitwall_mi_setup`), y —si
    Firebase está listo— programa una escritura a Firestore con *debounce* de
    800ms (`saveTimer`) para no escribir en cada tecla.
 
@@ -198,15 +202,18 @@ final de `gearboxOf`).
 - Si `sel` tiene un carro: muestra la ficha (`S.card`) con bloques de
   VOLANTE, CAMBIO, CAJA DE CAMBIOS (solo iRacing), FRENO VRS (con el input
   de kg reales y la barra de presión) y NOTAS DE BOXES.
-- Si no: muestra buscador, chips de categoría/transmisión/resorte/tie-rod/
-  preload y la lista de carros filtrada, con un footer fijo de leyenda.
+- Si no: muestra la barra "MI SETUP" (resumen de `miSetup`, botón
+  editar/configurar y el toggle "Filtrar por mi setup"), buscador, chips de
+  categoría/transmisión/resorte/tie-rod/preload y la lista de carros
+  filtrada, con un footer fijo de leyenda.
 
 ## 7. Sincronización (Firebase) {#sincronización-firebase}
 
 - **Qué se sincroniza**: `customKg` (valores reales de freno), `tieMm`
   (longitudes corta/larga del tie-rod, en mm) y `preMm` (preload en mm por
-  combinación resorte + tie-rod + nivel). Todo lo demás (filtros, selección)
-  es efímero y no se persiste.
+  combinación resorte + tie-rod + nivel) y `miSetup` (resorte, tie-rod y
+  preload que el usuario tiene montados ahora). Todo lo demás (filtros,
+  selección, si el filtro "mi setup" está activo) es efímero y no se persiste.
 - **Cómo se identifica un dispositivo/usuario**: no hay login. El
   "código de sync" (`XXXX-999`) generado por `genSyncCode()` es literalmente
   la clave del documento en Firestore (`configs/{syncCode}`). Cualquiera que
@@ -220,6 +227,7 @@ final de `gearboxOf`).
     customKg: { "ir:gt3": 92, "ac:calle": 61, ... },
     tieMm: { corta: 38, larga: 51 },
     preMm: { "rojo|Larga|2": 12, "rojo|Corta|0": 7, ... },
+    miSetup: { spring: "rojo", tie: "Stock", pre: "Moderado" },
   }
   ```
 

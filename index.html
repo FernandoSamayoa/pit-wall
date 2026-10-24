@@ -723,6 +723,21 @@
     }
     const TIE_STOPS = ["Corta", "Stock", "Larga"];
 
+    /* "Mi setup": el resorte, tie-rod y preload que el usuario tiene montados
+       ahora en sus pedales. Es un solo valor global (no depende del sim ni del
+       carro) y sirve para filtrar la lista por lo que ya tiene puesto.
+       Todos los campos son opcionales; solo los definidos filtran. */
+    const SETUP_SPRINGS = ["rojo", "azul"];
+
+    function sanearSetup(raw) {
+      const s = {};
+      if (!raw || typeof raw !== "object") return s;
+      if (SETUP_SPRINGS.includes(raw.spring)) s.spring = raw.spring;
+      if (TIE_STOPS.includes(raw.tie)) s.tie = raw.tie;
+      if (PRE_STOPS.includes(raw.pre)) s.pre = raw.pre;
+      return s;
+    }
+
     function MiniGauge({ title, stops, range, color, values, onEdit }) {
       const [lo, hi] = range;
       const last = stops.length - 1;
@@ -885,6 +900,14 @@
       });
       const [preModal, setPreModal] = useState(false);
       const [preDraft, setPreDraft] = useState({});
+      // Setup actual del usuario ({ spring?, tie?, pre? }) y si la lista se
+      // está filtrando por él. El filtro no se resetea al cambiar de sim.
+      const [miSetup, setMiSetup] = useState(() => {
+        try { return sanearSetup(JSON.parse(localStorage.getItem("pitwall_mi_setup") || "{}")); } catch { return {}; }
+      });
+      const [miSetupOn, setMiSetupOn] = useState(false);
+      const [setupModal, setSetupModal] = useState(false);
+      const [setupDraft, setSetupDraft] = useState({});
       const saveTimer = useRef(null);
       const skipNextSave = useRef(false);
       const fbReady = useRef(false);
@@ -911,10 +934,11 @@
           .then(snap => {
             if (snap.exists) {
               const d = snap.data();
-              if (d.customKg || d.tieMm || d.preMm) skipNextSave.current = true;
+              if (d.customKg || d.tieMm || d.preMm || d.miSetup) skipNextSave.current = true;
               if (d.customKg) setCustomKg(d.customKg);
               if (d.tieMm) setTieMm(d.tieMm);
               if (d.preMm) setPreMm(migrarPreMm(d.preMm));
+              if (d.miSetup) setMiSetup(sanearSetup(d.miSetup));
             }
             setSyncing(false);
           })
@@ -926,14 +950,15 @@
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
         localStorage.setItem("pitwall_tie_mm", JSON.stringify(tieMm));
         localStorage.setItem("pitwall_pre_mm", JSON.stringify(preMm));
+        localStorage.setItem("pitwall_mi_setup", JSON.stringify(miSetup));
         if (!fbReady.current) return;
         if (skipNextSave.current) { skipNextSave.current = false; return; }
         clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
-          CONFIGS.doc(syncCode).set({ customKg, tieMm, preMm }).catch(() => {});
+          CONFIGS.doc(syncCode).set({ customKg, tieMm, preMm, miSetup }).catch(() => {});
         }, 800);
         return () => clearTimeout(saveTimer.current);
-      }, [customKg, tieMm, preMm]);
+      }, [customKg, tieMm, preMm, miSetup]);
 
       const applyCode = () => {
         const c = codeInput.trim().toUpperCase();
@@ -960,6 +985,24 @@
         if (l) next.larga = l;
         setTieMm(next);
         setTieModal(false);
+      };
+
+      const openSetupModal = () => {
+        setSetupDraft({ ...miSetup });
+        setSetupModal(true);
+      };
+      const saveSetup = () => {
+        const next = sanearSetup(setupDraft);
+        setMiSetup(next);
+        // Si se borró todo no queda nada que filtrar
+        if (!Object.keys(next).length) setMiSetupOn(false);
+        setSetupModal(false);
+      };
+      const setupDefinido = Object.keys(miSetup).length > 0;
+      const miSetupActivo = miSetupOn && setupDefinido;
+      const toggleMiSetup = () => {
+        if (!setupDefinido) { openSetupModal(); return; }
+        setMiSetupOn((o) => !o);
       };
 
       // Clave física del preload y niveles que aplican al carro seleccionado
@@ -1012,27 +1055,34 @@
         const brakeOf = (x) => BRAKES[x.b || CATS[x.cat].b];
         // Un perfil con rango (ej. tie "Stock a larga") coincide con
         // cualquiera de las posiciones que cubre.
-        const tieOk = (x) => {
-          if (tie === "todas") return true;
+        const springOf = (x) => x.s || brakeOf(x).s;
+        const tieOk = (x, v) => {
+          if (!v || v === "todas") return true;
           const [tlo, thi] = TIE_LEVELS[brakeOf(x).tie];
-          const i = TIE_STOPS.indexOf(tie);
+          const i = TIE_STOPS.indexOf(v);
           return i >= tlo && i <= thi;
         };
-        const preOk = (x) => {
-          if (pre === "todas") return true;
+        const preOk = (x, v) => {
+          if (!v || v === "todas") return true;
           const [plo, phi] = PRE_LEVELS[brakeOf(x).pre];
-          const i = PRE_STOPS.indexOf(pre);
+          const i = PRE_STOPS.indexOf(v);
           return i >= plo && i <= phi;
         };
+        // "Mi setup" se suma a los filtros manuales; solo filtran los campos
+        // que el usuario definió.
+        const setupOk = (x) =>
+          !miSetupActivo || (
+            (!miSetup.spring || springOf(x) === miSetup.spring) &&
+            tieOk(x, miSetup.tie) && preOk(x, miSetup.pre));
         return data
           .filter((x) =>
             (cat === "todas" || x.cat === cat) &&
             (trans === "todas" || TRANS_GROUPS[trans](x.t)) &&
-            (spring === "todas" || (x.s || BRAKES[x.b || CATS[x.cat].b].s) === spring) &&
-            tieOk(x) && preOk(x) &&
+            (spring === "todas" || springOf(x) === spring) &&
+            tieOk(x, tie) && preOk(x, pre) && setupOk(x) &&
             (!ql || x.n.toLowerCase().includes(ql)))
           .sort((a, b) => a.n.localeCompare(b.n));
-      }, [sim, cat, trans, spring, tie, pre, q]);
+      }, [sim, cat, trans, spring, tie, pre, q, miSetup, miSetupActivo]);
 
       const rec = sel ? recomendar(sel) : null;
 
@@ -1069,9 +1119,16 @@
         },
       ];
       const filtrosActivos = GRUPOS_FILTRO.filter((g) => g.value !== "todas");
+      const totalFiltros = filtrosActivos.length + (miSetupActivo ? 1 : 0);
       const limpiarFiltros = () => {
         setCat("todas"); setTrans("todas"); setSpring("todas"); setTie("todas"); setPre("todas");
+        setMiSetupOn(false);
       };
+      const resumenSetup = [
+        miSetup.spring && { txt: `Resorte ${miSetup.spring}`, color: miSetup.spring === "rojo" ? "#D9442E" : "#3D7BD9" },
+        miSetup.tie && { txt: `Tie-rod ${miSetup.tie.toLowerCase()}` },
+        miSetup.pre && { txt: `Preload ${miSetup.pre.toLowerCase()}` },
+      ].filter(Boolean);
 
       return (
         <div style={S.root}>
@@ -1293,6 +1350,31 @@
                 onChange={(e) => setQ(e.target.value)}
                 aria-label="Buscar carro"
               />
+              <div style={S.setupBar}>
+                <span style={S.filterGroupLabel}>MI SETUP</span>
+                {setupDefinido ? (
+                  <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", alignItems: "center", flex: 1, minWidth: 0, fontSize: 12.5, color: "#B9C0CB" }}>
+                    {resumenSetup.map((r) => (
+                      <span key={r.txt} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        {r.color && <span style={{ width: 8, height: 8, borderRadius: "50%", background: r.color }} />}
+                        {r.txt}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 12.5, color: "#6b7482", flex: 1 }}>sin definir</span>
+                )}
+                <button onClick={openSetupModal} style={S.filterClear}>{setupDefinido ? "editar" : "configurar"}</button>
+                {setupDefinido && (
+                  <button
+                    onClick={toggleMiSetup}
+                    aria-pressed={miSetupActivo}
+                    style={{ ...S.chip, padding: "3px 11px", fontSize: 12, ...(miSetupActivo ? S.chipTrans : {}) }}
+                  >
+                    ★ Filtrar por mi setup
+                  </button>
+                )}
+              </div>
               <div style={S.filterBar}>
                 <button
                   onClick={() => setFiltrosAbiertos((o) => !o)}
@@ -1306,14 +1388,25 @@
                     ))}
                   </span>
                   Filtros
-                  {filtrosActivos.length > 0 && <span style={S.filterBadge}>{filtrosActivos.length}</span>}
+                  {totalFiltros > 0 && <span style={S.filterBadge}>{totalFiltros}</span>}
                 </button>
 
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", flex: 1, minWidth: 0 }}>
-                  {filtrosActivos.length === 0 ? (
+                  {totalFiltros === 0 ? (
                     <span style={{ fontSize: 12.5, color: "#6b7482" }}>{lista.length} carros · sin filtros</span>
                   ) : (
-                    filtrosActivos.map((g) => {
+                    <>
+                    {miSetupActivo && (
+                      <button
+                        onClick={() => setMiSetupOn(false)}
+                        title="Quitar filtro de mi setup"
+                        style={{ ...S.filterPill, borderColor: "#F2B544", color: "#F2B544" }}
+                      >
+                        ★ Mi setup
+                        <span aria-hidden="true" style={{ color: "#6b7482", fontSize: 13, lineHeight: 1 }}>×</span>
+                      </button>
+                    )}
+                    {filtrosActivos.map((g) => {
                       const o = g.opts.find((x) => x.v === g.value) || {};
                       return (
                         <button
@@ -1327,11 +1420,12 @@
                           <span aria-hidden="true" style={{ color: "#6b7482", fontSize: 13, lineHeight: 1 }}>×</span>
                         </button>
                       );
-                    })
+                    })}
+                    </>
                   )}
                 </div>
 
-                {filtrosActivos.length > 0 && (
+                {totalFiltros > 0 && (
                   <button onClick={limpiarFiltros} style={S.filterClear}>limpiar</button>
                 )}
               </div>
@@ -1395,6 +1489,58 @@
                 </div>
               </footer>
             </>
+          )}
+
+          {setupModal && (
+            <div
+              onClick={() => setSetupModal(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mi setup actual"
+            >
+              <div onClick={(e) => e.stopPropagation()} style={{ background: "#1C2128", border: "1px solid #2A313B", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
+                <div style={{ ...S.blockLabel, marginBottom: 2 }}>MI SETUP ACTUAL</div>
+                <div style={{ fontSize: 12.5, color: "#8B94A1", lineHeight: 1.5, marginBottom: 14 }}>
+                  Lo que tienes montado ahora en los pedales. Se guarda y se sincroniza, y te permite filtrar los carros de cualquier simulador por esta configuración. Puedes cambiarlo cuando quieras.
+                </div>
+                {[
+                  { k: "spring", label: "RESORTE", opts: SETUP_SPRINGS.map((v) => ({ v, txt: v === "rojo" ? "Rojo (duro)" : "Azul (blando)", color: v === "rojo" ? "#D9442E" : "#3D7BD9" })) },
+                  { k: "tie", label: "TIE-ROD", opts: TIE_STOPS.map((v) => ({ v, txt: v })) },
+                  { k: "pre", label: "PRELOAD", opts: PRE_STOPS.map((v) => ({ v, txt: v })) },
+                ].map((g) => (
+                  <div key={g.k} style={{ marginBottom: 12 }}>
+                    <div style={S.filterGroupLabel}>{g.label}</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[{ v: undefined, txt: "Sin definir" }, ...g.opts].map((o) => {
+                        const on = setupDraft[g.k] === o.v;
+                        const activeStyle = o.color
+                          ? { background: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
+                          : S.chipTrans;
+                        return (
+                          <button
+                            key={o.txt}
+                            aria-pressed={on}
+                            onClick={() => setSetupDraft((prev) => {
+                              const next = { ...prev };
+                              if (o.v === undefined) delete next[g.k]; else next[g.k] = o.v;
+                              return next;
+                            })}
+                            style={{ ...S.chip, ...(on ? activeStyle : {}) }}
+                          >
+                            {o.txt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                  <button onClick={() => setSetupModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
+                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", background: "#F2B544", color: "#14171C", borderColor: "#F2B544", fontWeight: 600 }}>Guardar</button>
+                </div>
+              </div>
+            </div>
           )}
 
           {tieModal && (
@@ -1499,6 +1645,7 @@
       search: { width: "100%", background: "#1C2128", border: "1px solid #2A313B", borderRadius: 6, color: "#E8E6E0", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
       chip: { background: "#1C2128", border: "1px solid #2A313B", borderRadius: 999, color: "#B9C0CB", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
       chipOn: { background: "#E8E6E0", color: "#14171C", borderColor: "#E8E6E0", fontWeight: 600 },
+      setupBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: "#1C2128", border: "1px solid #2A313B", borderLeft: "3px solid #F2B544", borderRadius: 6, marginBottom: 8 },
       filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: "#1C2128", border: "1px solid #2A313B", borderRadius: 6, marginBottom: 8 },
       filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, background: "#2A313B", border: "1px solid #3a4250", borderRadius: 6, color: "#E8E6E0", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
       filterToggleOn: { background: "#F2B544", color: "#14171C", borderColor: "#F2B544" },
