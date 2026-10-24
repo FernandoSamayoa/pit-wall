@@ -20,11 +20,11 @@ Cada categoría define el default de volante (`w`) y perfil de freno (`b`). El c
 | Clave | Label | Volante default | Freno default |
 |---|---|---|---|
 | `formula` | Fórmula | formula | formula |
-| `proto` | Prototipos | formula | proto |
-| `gt3` | GT3 | gt3 | gt3 |
+| `proto` | Prototipos | neo | proto |
+| `gt3` | GT3 | neo | gt3 |
 | `gt4` | GT4 | gt3 | gt4 |
-| `gte` | GTE | gt3 | gte |
-| `gt2` | GT2 | gt3 | gte |
+| `gte` | GTE | neo | gte |
+| `gt2` | GT2 | neo | gte |
 | `gt1` | GT1 / clásicos GT | gt3 | gte |
 | `copa` | Copas monomarca | gt3 | gt3 |
 | `tcr` | TCR / Turismos | gt3 | turismo |
@@ -57,8 +57,9 @@ Elige por cómo cambia el **carro real**:
 | Clave | Aro | Cuándo |
 |---|---|---|
 | `redondo` | Redondo 332mm + Button Rally Module (sin levas) | Todo carro que cambie con palanca o no tenga cambios: clásicos, rally, óvalo, tierra. El embrague va en el pedal. |
-| `gt3` | CSL GT3 (levas de cambio + clutch paddles) | GT3/GT4/GTE/GT2/copas/TCR: el carro real arranca con clutch paddles. |
-| `formula` | Formula 2.5X (levas de cambio, embrague y 2 extra) | Monoplazas y prototipos. |
+| `gt3` | CSL McLaren GT3 (levas de cambio + clutch paddles) | GT4/GT1/copas/TCR: el carro real arranca con clutch paddles. |
+| `neo` | Simagic GT Neo (levas de cambio + clutch paddles) | GT3, GTE, GT2 y prototipos. |
+| `formula` | Formula 2.5X (levas de cambio, embrague y 2 extra) | Monoplazas. |
 | `podium` | Podium 330mm flat bottom (levas, sin clutch paddles) | Carros de calle/superdeportivos con DCT/PDK donde el embrague real es 100% automático. |
 
 Caso especial recurrente: un carro de calle con DSG/PDK y volante redondo real → `podium` es el compromiso (el redondo no tiene levas); deja una nota explicándolo (ver VW Jetta TDI Cup).

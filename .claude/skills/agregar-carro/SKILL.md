@@ -5,7 +5,7 @@ description: Agrega vehículos al catálogo de Pit Wall (index.html) con la conf
 
 # Agregar un vehículo a Pit Wall
 
-Pit Wall vive completa en `index.html` (un solo archivo, React + Babel por CDN). Para cada carro recomienda: **volante** (uno de 4 aros Fanatec), **modo de cambio** (levas / palanca secuencial / palanca en H + embrague VRS) y **freno VRS** (un perfil por tipo de asistencia que define resorte, tie-rod, preload y rango de kg). Agregar un carro bien = investigar el carro real → mapear al modelo de datos → insertar la entrada `c(...)` en el array del simulador.
+Pit Wall vive completa en `index.html` (un solo archivo, React + Babel por CDN). Para cada carro recomienda: **volante** (uno de 5 aros: Fanatec y Simagic), **modo de cambio** (levas / palanca secuencial / palanca en H + embrague VRS) y **freno VRS** (un perfil por tipo de asistencia que define resorte, tie-rod, preload y rango de kg). Agregar un carro bien = investigar el carro real → mapear al modelo de datos → insertar la entrada `c(...)` en el array del simulador.
 
 La regla más importante de toda la app: **el perfil de freno se elige por el tipo de asistencia del carro real (servo, ABS, downforce), no por qué tan rápido es**. Un carro de calle con servo y una copa ligera sin servo usan los dos resorte azul, pero son perfiles distintos con tie-rod, preload y calibración separados.
 
