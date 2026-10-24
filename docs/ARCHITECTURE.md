@@ -74,7 +74,7 @@ volantes pequeños por fidelidad histórica, etc).
 
 | Código | Significado | Efecto en la recomendación |
 |---|---|---|
-| `L` | Levas (paddle shift) | Aro con levas (`gt3`, `formula` o `podium` según categoría). |
+| `L` | Levas (paddle shift) | Aro con levas (`gt3`, `neo`, `formula` o `podium` según categoría). |
 | `S` | Secuencial por palanca | Palanca Fanatec en modo secuencial. |
 | `H` | Manual en H | Palanca en H + pedal de embrague VRS. |
 | `HD` | Manual en H, patrón *dogleg* | Igual que `H`, pero con nota aclarando que la 1ª va abajo-izquierda. |
@@ -88,11 +88,11 @@ freno (`b`) para todos los carros de esa categoría, salvo que el carro
 individual lo sobreescriba con `o`:
 
 ```js
-gt3: { label: "GT3", w: "gt3", b: "gt3" },
+gt3: { label: "GT3", w: "neo", b: "gt3" },
 ```
 
 Los valores válidos de `w` son las claves de `WHEELS`: `"redondo"`, `"gt3"`,
-`"formula"`, `"podium"`. Los de `b` son las claves de `BRAKES`.
+`"neo"`, `"formula"`, `"podium"`. Los de `b` son las claves de `BRAKES`.
 
 `BRAKES` agrupa los frenos **por tipo de asistencia (boost)**, no por color
 de resorte: un carro de calle con servo de vacío y un carro de copa sin

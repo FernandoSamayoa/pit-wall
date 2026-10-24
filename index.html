@@ -39,7 +39,7 @@
     /* ============================================================
        PIT WALL — Selector de configuración del rig
        Hardware: Pedales VRS Pro (resorte azul/rojo) · Fanatec
-       Volantes: Redondo 332mm+Button Rally Module · CSL GT3 · Formula 2.5X · Podium 330mm
+       Volantes: Redondo 332mm+Button Rally Module · CSL McLaren GT3 · Simagic GT Neo · Formula 2.5X · Podium 330mm
        Palanca Fanatec H/secuencial
        Listas: iRacing 2026 S3 · AC EVO v0.9
        ============================================================ */
@@ -52,11 +52,11 @@
     // agrupado por el tipo de asistencia (servo / sin servo / downforce).
     const CATS = {
       formula:   { label: "Fórmula",        w: "formula", b: "formula" },
-      proto:     { label: "Prototipos",     w: "formula", b: "proto" },
-      gt3:       { label: "GT3",            w: "gt3", b: "gt3" },
+      proto:     { label: "Prototipos",     w: "neo", b: "proto" },
+      gt3:       { label: "GT3",            w: "neo", b: "gt3" },
       gt4:       { label: "GT4",            w: "gt3", b: "gt4" },
-      gte:       { label: "GTE",            w: "gt3", b: "gte" },
-      gt2:       { label: "GT2",            w: "gt3", b: "gte" },
+      gte:       { label: "GTE",            w: "neo", b: "gte" },
+      gt2:       { label: "GT2",            w: "neo", b: "gte" },
       gt1:       { label: "GT1 / clásicos GT", w: "gt3", b: "gte" },
       copa:      { label: "Copas monomarca",w: "gt3", b: "gt3" },
       tcr:       { label: "TCR / Turismos", w: "gt3", b: "turismo" },
@@ -500,12 +500,16 @@
         porque: "Aro continuo para cruzar las manos y sin levas: lo correcto en clásicos, rally, drift, óvalo, tierra y cualquier carro que cambies con palanca (H o secuencial) o que no tenga cambios.",
       },
       gt3: {
-        nombre: "CSL GT3",
-        porque: "Levas de cambio y de embrague: el volante de carreras para GT3, GT4, GTE, GT2, copas y TCR, donde el coche real arranca con clutch paddles.",
+        nombre: "CSL McLaren GT3",
+        porque: "Levas de cambio y de embrague: el volante de carreras para GT4, GT1, copas y TCR, donde el coche real arranca con clutch paddles.",
+      },
+      neo: {
+        nombre: "Simagic GT Neo",
+        porque: "Levas de cambio y de embrague en un aro de carreras: el volante para GT3, GTE, GT2 y prototipos, donde el coche real arranca con clutch paddles y lleva mandos de ajuste en el aro.",
       },
       formula: {
         nombre: "Formula 2.5X",
-        porque: "Levas de cambio, de embrague y 2 extra: lo que pide un monoplaza o prototipo.",
+        porque: "Levas de cambio, de embrague y 2 extra: lo que pide un monoplaza.",
       },
       podium: {
         nombre: "Podium 330mm (bottom flat)",
@@ -634,7 +638,9 @@
         if (wheelKey === "formula")
           notas.push("Salida parada: usa las levas de embrague del Formula 2.5X. Las 2 levas extra: asígnalas a control de tracción y reparto de frenada.");
         else if (wheelKey === "gt3")
-          notas.push("Salida parada: usa las levas de embrague del CSL GT3 para clavar el launch.");
+          notas.push("Salida parada: usa las levas de embrague del CSL McLaren GT3 para clavar el launch.");
+        else if (wheelKey === "neo")
+          notas.push("Salida parada: usa las levas de embrague del GT Neo para clavar el launch. Asigna los mandos del aro a control de tracción, ABS y reparto de frenada.");
         else if (wheelKey === "podium")
           notas.push("El carro real no tiene pedal ni leva de embrague: el Podium 330mm no lleva clutch paddles porque no los necesitas.");
       }
@@ -812,6 +818,15 @@
               <path d="M27 65 L18 75 M73 65 L82 75" strokeLinecap="round" />
             </g>
           )}
+          {tipo === "neo" && (
+            <g stroke={col} strokeWidth={sw} fill="none">
+              <path d="M16 36 Q50 20 84 36 L88 56 Q72 74 50 74 Q28 74 12 56 Z" />
+              <rect x="38" y="42" width="24" height="14" rx="3" fill={col} stroke="none" />
+              <circle cx="24" cy="48" r="4" fill={col} stroke="none" />
+              <circle cx="76" cy="48" r="4" fill={col} stroke="none" />
+              <path d="M26 64 L17 74 M74 64 L83 74" strokeLinecap="round" />
+            </g>
+          )}
           {tipo === "podium" && (
             <g stroke={col} strokeWidth={sw} fill="none">
               <path d="M18 38 Q50 22 82 38 L85 62 L15 62 Z" />
@@ -831,7 +846,7 @@
       );
     }
 
-    const WHEEL_LABELS = { redondo: "Circular", gt3: "GT", formula: "Formula", podium: "Flat Bottom" };
+    const WHEEL_LABELS = { redondo: "Circular", gt3: "GT", neo: "GT Neo", formula: "Formula", podium: "Flat Bottom" };
 
     function App() {
       const [sim, setSim] = useState("ir");
@@ -1083,7 +1098,7 @@
             </div>
             <h1 style={S.h1}>PIT WALL</h1>
             <p style={S.sub}>
-              Tu rig, carro a carro · VRS Pro · Fanatec DD · 4 volantes · palanca H/secuencial
+              Tu rig, carro a carro · VRS Pro · Fanatec DD · 5 volantes · palanca H/secuencial
             </p>
           </header>
 
@@ -1141,7 +1156,7 @@
               <div style={S.block}>
                 <div style={S.blockLabel}>VOLANTE</div>
                 <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
-                  {["redondo", "gt3", "formula", "podium"].map((w) => (
+                  {["redondo", "gt3", "neo", "formula", "podium"].map((w) => (
                     <div key={w} style={{ textAlign: "center", opacity: rec.wheelKey === w ? 1 : 0.45 }}>
                       <WheelIcon tipo={w} activo={rec.wheelKey === w} />
                       <div style={{ fontSize: 10, color: rec.wheelKey === w ? "#F2B544" : "#8B94A1", marginTop: 2 }}>
