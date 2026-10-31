@@ -166,7 +166,7 @@
        Hardware: Pedales VRS Pro (resorte azul/rojo) · Fanatec
        Volantes: Redondo 332mm+Button Rally Module · CSL McLaren GT3 · Simagic GT Neo · Formula 2.5X · Podium 330mm
        Palanca Fanatec H/secuencial
-       Listas: iRacing 2026 S3 · AC EVO v0.9
+       Listas: iRacing 2026 S4 · AC EVO v0.9 · AC Rally v0.6 · AMS2 v1.6.9
        ============================================================ */
 
     // ---- Códigos de transmisión ----
@@ -470,11 +470,14 @@
       c("Lancia Stratos Gr.4", "rally", 1976, "HD", "V6 Ferrari central y batalla cortísima. Caja dogleg.", { notas: ["Nervioso al límite: manos rápidas con el aro redondo y mucho respeto en bajadas."] }),
       c("Fiat 131 Abarth Gr.4", "rally", 1976, "H", "El clásico de Alén y Röhrl: propulsión y derrapadas largas."),
       c("Fiat 124 Sport Abarth Rally 16V Gr.4", "rally", 1973, "H", "Spider de rally de los 70: ligero y dócil para aprender tierra."),
-      c("Alpine A110 1600 Gr.4 (añadido dic. 2025)", "rally", 1973, "H", "El primer campeón del mundial de rallies. Motor trasero y agilidad pura."),
+      c("Alpine A110 1600 Gr.4", "rally", 1973, "H", "El primer campeón del mundial de rallies. Motor trasero y agilidad pura."),
       c("Alfa Romeo GTA 1300 Junior Gr.2", "rally", 1972, "H", "Pequeño, cantarín y de paso por curva altísimo."),
       c("Lancia Fulvia Coupé 1.6 HF Gr.4", "rally", 1970, "H", "El V4 'Fanalone' que ganó Montecarlo '72: FWD, ligero y dócil para aprender tierra."),
       c("Mini Cooper S Gr.2", "rally", 1964, "H", "El gigante pequeño de Montecarlo. FWD histórico."),
-      c("Škoda Fabia RS Rally2 (anunciado para 2026)", "rally", 2023, "S", "Confirmado por el estudio, aún no disponible en el acceso anticipado."),
+      c("Škoda Fabia RS Rally2", "rally", 2023, "S", "El Rally2 actual de Škoda: 1.6 turbo de unos 290 CV, AWD y secuencial de 5 con palanca."),
+      c("Volkswagen Polo GTI R5", "rally", 2018, "S", "El R5 de Volkswagen Motorsport: 1.6 turbo de unos 270 CV, AWD y secuencial de 5 con palanca."),
+      c("Peugeot 206 WRC", "rally", 1999, "S", "El World Rally Car que le dio a Peugeot tres títulos de constructores seguidos (2000-2002): 2.0 turbo de unos 300 CV, AWD y secuencial de 6."),
+      c("Audi quattro Gr.4", "rally", 1980, "H", "El quattro original que llevó la tracción total al mundial: 5 cilindros turbo de 2.1 litros, unos 300 CV y caja manual en H de 5."),
     ];
 
     const AMS2 = [
@@ -516,6 +519,7 @@
       c("Chevrolet Camaro GT4.R", "gt4", 2017, "L", "Muscle car GT4 americano: caja secuencial con embrague para la salida."),
       c("Ginetta G55 GT4", "gt4", 2012, "L", "GT4 británico ligero: caja secuencial con embrague para la salida."),
       c("GTE (911 RSR, M8 GTE, Corvette C8.R)", "gte", 2019, "L", "Los GTE de la era IMSA/WEC reciente."),
+      c("Panoz Esperante GTR-1", "gt1", 1997, "S", "El \"Batmobile\" de Le Mans (1997-1999): GT1 desarrollado con Reynard, con un V8 Ford de unos 600 CV montado detrás del eje delantero. Gratis para todos en AMS2.", { w: "redondo", notas: ["Aro redondo como los GT1 reales de los 90: ninguno usaba levas."] }),
       c("GT1 Classics (McLaren F1 GTR, Porsche 911 GT1, CLK LM)", "gt1", 1997, "S", "Los GT1 de Le Mans de los 90.", { w: "redondo", notas: ["El F1 GTR de 1995 lleva H con embrague; los del 97-98 ya son secuenciales.", "Aro redondo como los GT1 reales de los 90: ninguno usaba levas."] }),
       c("GT1 2005 (DBR9 / C5.R / Viper GTS-R / MC12 / Lister Storm / Saleen S7R / Milano)", "gt1", 2005, "S", "Los GT1 estilo GTR2 del Historical Endurance Pack Pt1 y Pt2 (jul. 2026).", { w: "redondo", notas: ["Secuencial de palanca en toda la clase, como los GT1 reales de la época."] }),
       c("GT2 2005 (Porsche 996 RSR / Panoz Esperante / Spyker C8 / TVR Tuscan)", "gt2", 2005, "S", "Los GT2 de la era GTR2, del Historical Endurance Pack Pt1 y Pt2.", { w: "redondo" }),
@@ -1407,7 +1411,7 @@
           )}
 
           <div style={S.tabs} role="tablist">
-            {[["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.9"], ["acr", "AC Rally", "v0.5"], ["ams", "AMS2", "v1.6"]].map(([k, t, v]) => (
+            {[["ir", "iRacing", "2026 S4"], ["ac", "AC EVO", "v0.9"], ["acr", "AC Rally", "v0.6"], ["ams", "AMS2", "v1.6.9"]].map(([k, t, v]) => (
               <button
                 key={k}
                 role="tab"
