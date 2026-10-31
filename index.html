@@ -742,15 +742,15 @@
       const markerPct = marker ? Math.min((marker / MAX) * 100, 100) : null;
       return (
         <div style={{ marginTop: 8 }}>
-          <div style={{ position: "relative", height: 8, background: "var(--line)", borderRadius: 4 }}>
+          <div style={{ position: "relative", height: 8, backgroundColor: "var(--line)", borderRadius: 4 }}>
             <div style={{
               position: "absolute", left: `${(lo / MAX) * 100}%`, width: `${((hi - lo) / MAX) * 100}%`,
-              top: 0, bottom: 0, background: color, borderRadius: 4,
+              top: 0, bottom: 0, backgroundColor: color, borderRadius: 4,
             }} />
             {markerPct !== null && (
               <div style={{
                 position: "absolute", left: `${markerPct}%`,
-                top: -4, bottom: -4, width: 2, background: "var(--marker)",
+                top: -4, bottom: -4, width: 2, backgroundColor: "var(--marker)",
                 borderRadius: 1, transform: "translateX(-50%)",
                 boxShadow: "0 0 4px var(--marker-glow)",
               }} />
@@ -856,17 +856,17 @@
               )
             ))}
           </div>
-          <div style={{ position: "relative", height: 8, background: "var(--line)", borderRadius: 4 }}>
+          <div style={{ position: "relative", height: 8, backgroundColor: "var(--line)", borderRadius: 4 }}>
             {stops.map((s, i) => (
               i > 0 && i < last && (
-                <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, top: 1, bottom: 1, width: 2, background: "var(--line-strong)", transform: "translateX(-50%)", borderRadius: 1 }} />
+                <span key={s} style={{ position: "absolute", left: `${pct(i)}%`, top: 1, bottom: 1, width: 2, backgroundColor: "var(--line-strong)", transform: "translateX(-50%)", borderRadius: 1 }} />
               )
             ))}
             {hi > lo && (
-              <div style={{ position: "absolute", left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%`, top: 0, bottom: 0, background: color, borderRadius: 4 }} />
+              <div style={{ position: "absolute", left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%`, top: 0, bottom: 0, backgroundColor: color, borderRadius: 4 }} />
             )}
             {[...(hi > lo ? [lo, hi] : [lo])].map((i) => (
-              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", background: color, transform: anchor(i), boxShadow: "0 0 0 2px var(--bg)" }} />
+              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", backgroundColor: color, transform: anchor(i), boxShadow: "0 0 0 2px var(--bg)" }} />
             ))}
           </div>
           <div style={{ position: "relative", height: 14, marginTop: 6 }}>
@@ -1242,7 +1242,7 @@
           <header style={S.header}>
             <div style={S.flag} aria-hidden="true">
               {Array.from({ length: 8 }).map((_, i) => (
-                <span key={i} style={{ ...S.flagSq, background: i % 2 ? "var(--text)" : "transparent" }} />
+                <span key={i} style={{ ...S.flagSq, backgroundColor: i % 2 ? "var(--text)" : "transparent" }} />
               ))}
             </div>
             <h1 style={S.h1}>PIT WALL</h1>
@@ -1257,7 +1257,7 @@
             </span>
             {!showCodeInput ? (
               <>
-                <code style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 2, background: "var(--surface)", padding: "2px 10px", borderRadius: 4, border: "1px solid var(--line)" }}>
+                <code style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 2, backgroundColor: "var(--surface)", padding: "2px 10px", borderRadius: 4, borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)" }}>
                   {syncCode}
                 </code>
                 <button onClick={() => navigator.clipboard.writeText(syncCode)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>copiar</button>
@@ -1271,10 +1271,10 @@
                   onKeyDown={e => e.key === "Enter" && applyCode()}
                   placeholder="ej. XKPQ-847"
                   maxLength={9}
-                  style={{ width: 110, background: "var(--line)", border: "1px solid var(--accent)", borderRadius: 4, color: "var(--text)", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
+                  style={{ width: 110, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--accent)", borderRadius: 4, color: "var(--text)", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
                   autoFocus
                 />
-                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>usar</button>
+                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>usar</button>
                 <button onClick={() => { setShowCodeInput(false); setCodeInput(""); }} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cancelar</button>
               </>
             )}
@@ -1294,10 +1294,10 @@
                 return (
                   <button key={th.key} role="radio" aria-checked={on} onClick={() => setTheme(th.key)}
                     style={{ ...S.themeSwatch, borderColor: on ? "var(--accent)" : "var(--line)" }}>
-                    <span aria-hidden="true" style={{ ...S.themePreview, background: th.t.bg, borderColor: th.t.line }}>
-                      <span style={{ position: "absolute", left: 6, right: 6, top: 6, height: 12, borderRadius: 3, background: th.t.surface, border: `1px solid ${th.t.line}` }} />
-                      <span style={{ position: "absolute", left: 6, bottom: 6, width: "42%", height: 7, borderRadius: 4, background: th.t.accent }} />
-                      <span style={{ position: "absolute", right: 6, bottom: 6, width: "28%", height: 7, borderRadius: 4, background: th.t.text }} />
+                    <span aria-hidden="true" style={{ ...S.themePreview, backgroundColor: th.t.bg, borderColor: th.t.line }}>
+                      <span style={{ position: "absolute", left: 6, right: 6, top: 6, height: 12, borderRadius: 3, backgroundColor: th.t.surface, borderWidth: 1, borderStyle: "solid", borderColor: th.t.line }} />
+                      <span style={{ position: "absolute", left: 6, bottom: 6, width: "42%", height: 7, borderRadius: 4, backgroundColor: th.t.accent }} />
+                      <span style={{ position: "absolute", right: 6, bottom: 6, width: "28%", height: 7, borderRadius: 4, backgroundColor: th.t.text }} />
                     </span>
                     <span style={{ fontSize: 12, fontWeight: on ? 600 : 400, color: on ? "var(--text)" : "var(--text-2)" }}>{th.name}</span>
                   </button>
@@ -1433,7 +1433,7 @@
                           placeholder="kg"
                           value={userKg || ""}
                           onChange={e => handleKgChange(e.target.value)}
-                          style={{ width: 62, background: "var(--line)", border: "1px solid var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
+                          style={{ width: 62, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
                         />
                         <span style={{ fontSize: 12, color: "var(--text-3)" }}>kg</span>
                         {userKg && (
@@ -1452,7 +1452,7 @@
                 <div style={S.block}>
                   <div style={S.blockLabel}>NOTAS DE BOXES</div>
                   {rec.notas.map((nt, i) => (
-                    <div key={i} style={{ ...S.blockSub, marginBottom: 6, paddingLeft: 12, borderLeft: "2px solid var(--accent)" }}>{nt}</div>
+                    <div key={i} style={{ ...S.blockSub, marginBottom: 6, paddingLeft: 12, borderLeftWidth: 2, borderLeftStyle: "solid", borderLeftColor: "var(--accent)" }}>{nt}</div>
                   ))}
                 </div>
               )}
@@ -1474,7 +1474,7 @@
                   <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", alignItems: "center", flex: 1, minWidth: 0, fontSize: 12.5, color: "var(--text-2)" }}>
                     {resumenSetup.map((r) => (
                       <span key={r.txt} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                        {r.color && <span style={{ width: 8, height: 8, borderRadius: "50%", background: r.color }} />}
+                        {r.color && <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: r.color }} />}
                         {r.txt}
                       </span>
                     ))}
@@ -1502,7 +1502,7 @@
                 >
                   <span aria-hidden="true" style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
                     {[0, 1, 2].map((i) => (
-                      <span key={i} style={{ display: "block", width: 14, height: 2, borderRadius: 1, background: "currentColor" }} />
+                      <span key={i} style={{ display: "block", width: 14, height: 2, borderRadius: 1, backgroundColor: "currentColor" }} />
                     ))}
                   </span>
                   Filtros
@@ -1533,7 +1533,7 @@
                           title={`Quitar filtro de ${g.label.toLowerCase()}`}
                           style={{ ...S.filterPill, ...(o.color ? { borderColor: o.color, color: o.color } : {}) }}
                         >
-                          {o.color && <span style={{ width: 7, height: 7, borderRadius: "50%", background: o.color, flexShrink: 0 }} />}
+                          {o.color && <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: o.color, flexShrink: 0 }} />}
                           {o.short || o.txt}
                           <span aria-hidden="true" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1 }}>×</span>
                         </button>
@@ -1557,12 +1557,12 @@
                         {g.opts.map((o) => {
                           const on = g.value === o.v;
                           const activeStyle = o.color
-                            ? { background: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
+                            ? { backgroundColor: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
                             : S.chipTrans;
                           return (
                             <button key={o.v} onClick={() => g.set(o.v)} style={{ ...S.chip, ...(on ? activeStyle : {}) }}>
                               <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                                {o.color && <span style={{ width: 8, height: 8, borderRadius: "50%", background: on ? "#fff" : o.color, flexShrink: 0 }} />}
+                                {o.color && <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: on ? "#fff" : o.color, flexShrink: 0 }} />}
                                 {o.txt}
                               </span>
                             </button>
@@ -1579,7 +1579,7 @@
                   const r = recomendar(x);
                   return (
                     <button key={x.n} className="row" role="listitem" onClick={() => { setSel(x); window.scrollTo({ top: 0 }); }} style={S.row}>
-                      <span style={{ ...S.dot, background: r.springKey === "rojo" ? "var(--red)" : "var(--blue)" }} aria-hidden="true" />
+                      <span style={{ ...S.dot, backgroundColor: r.springKey === "rojo" ? "var(--red)" : "var(--blue)" }} aria-hidden="true" />
                       <span style={{ flex: 1, textAlign: "left" }}>
                         <span style={S.rowName}>{x.n}</span>
                         <span style={S.rowMeta}>{CATS[x.cat].label} · {x.y} · {WHEEL_LABELS[x.w || CATS[x.cat].w]}</span>
@@ -1597,10 +1597,10 @@
 
               <footer style={S.footer}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 14 }}>
-                  <span style={{ ...S.dot, background: "var(--blue)" }} /> azul = resorte blando
+                  <span style={{ ...S.dot, backgroundColor: "var(--blue)" }} /> azul = resorte blando
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ ...S.dot, background: "var(--red)" }} /> rojo = resorte duro
+                  <span style={{ ...S.dot, backgroundColor: "var(--red)" }} /> rojo = resorte duro
                 </span>
                 <div style={{ marginTop: 10 }}>
                   Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.9 · AC Rally v0.4 · AMS2 v1.6 (por clases)
@@ -1612,12 +1612,12 @@
           {setupModal && (
             <div
               onClick={() => setSetupModal(false)}
-              style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
               role="dialog"
               aria-modal="true"
               aria-label="Mi setup actual"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>MI SETUP ACTUAL</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Lo que tienes montado ahora en los pedales. Se guarda y se sincroniza, y te permite filtrar los carros de cualquier simulador por esta configuración. Puedes cambiarlo cuando quieras.
@@ -1633,7 +1633,7 @@
                       {[{ v: undefined, txt: "Sin definir" }, ...g.opts].map((o) => {
                         const on = setupDraft[g.k] === o.v;
                         const activeStyle = o.color
-                          ? { background: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
+                          ? { backgroundColor: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
                           : S.chipTrans;
                         return (
                           <button
@@ -1655,7 +1655,7 @@
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setSetupModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1664,12 +1664,12 @@
           {tieModal && (
             <div
               onClick={() => setTieModal(false)}
-              style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
               role="dialog"
               aria-modal="true"
               aria-label="Modificar longitudes de tie-rod"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>TIE-ROD · LONGITUDES</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Stock es fijo ({TIE_STOCK_MM} mm), no se puede cambiar. Corta y larga son tus longitudes medidas en el pedal: aplican a todos los carros y simuladores.
@@ -1692,7 +1692,7 @@
                           onChange={(e) => setTieDraft((prev) => ({ ...prev, [k]: e.target.value }))}
                           onKeyDown={(e) => e.key === "Enter" && saveTieMm()}
                           autoFocus={k === "corta"}
-                          style={{ width: 70, background: "var(--line)", border: "1px solid var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                          style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
                         />
                         <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
                       </>
@@ -1701,7 +1701,7 @@
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setTieModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1710,12 +1710,12 @@
           {preModal && rec && (
             <div
               onClick={() => setPreModal(false)}
-              style={{ position: "fixed", inset: 0, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
               role="dialog"
               aria-modal="true"
               aria-label="Modificar preload en milímetros"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>PRELOAD · MILÍMETROS</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Valor para la combinación{" "}
@@ -1734,14 +1734,14 @@
                       onChange={(e) => setPreDraft((prev) => ({ ...prev, [lvl]: e.target.value }))}
                       onKeyDown={(e) => e.key === "Enter" && savePreMm()}
                       autoFocus={lvl === preLevelsOf(rec)[0]}
-                      style={{ width: 70, background: "var(--line)", border: "1px solid var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                      style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
                     />
                     <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
                   </div>
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setPreModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1751,45 +1751,45 @@
     }
 
     const S = {
-      root: { minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "'IBM Plex Sans', sans-serif", padding: "0 14px 40px", maxWidth: 760, margin: "0 auto" },
+      root: { minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--text)", fontFamily: "'IBM Plex Sans', sans-serif", padding: "0 14px 40px", maxWidth: 760, margin: "0 auto" },
       header: { padding: "22px 0 4px" },
-      flag: { display: "flex", width: 64, height: 8, border: "1px solid var(--line-strong)", marginBottom: 10 },
+      flag: { display: "flex", width: 64, height: 8, borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", marginBottom: 10 },
       flagSq: { flex: 1 },
       h1: { fontFamily: "'Saira Condensed', sans-serif", fontWeight: 700, fontSize: 42, letterSpacing: 6, margin: 0, lineHeight: 1 },
       sub: { color: "var(--text-3)", fontSize: 13, margin: "6px 0 0" },
       tabs: { display: "flex", gap: 8, margin: "18px 0 14px" },
-      tab: { flex: 1, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6, color: "var(--text)", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 0 },
-      tabOn: { background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
-      search: { width: "100%", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6, color: "var(--text)", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
-      chip: { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 999, color: "var(--text-2)", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
-      chipOn: { background: "var(--text)", color: "var(--bg)", borderColor: "var(--text)", fontWeight: 600 },
-      setupBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: "var(--surface)", border: "1px solid var(--line)", borderLeft: "3px solid var(--accent)", borderRadius: 6, marginBottom: 8 },
-      filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6, marginBottom: 8 },
-      filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, background: "var(--line)", border: "1px solid var(--line-strong)", borderRadius: 6, color: "var(--text)", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
-      filterToggleOn: { background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
-      filterBadge: { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 17, height: 17, padding: "0 5px", borderRadius: 9, background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 700 },
-      filterPill: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--line)", border: "1px solid var(--line-strong)", borderRadius: 999, color: "var(--text)", padding: "3px 9px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+      tab: { flex: 1, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, color: "var(--text)", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 0 },
+      tabOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
+      search: { width: "100%", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, color: "var(--text)", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
+      chip: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 999, color: "var(--text-2)", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
+      chipOn: { backgroundColor: "var(--text)", color: "var(--bg)", borderColor: "var(--text)", fontWeight: 600 },
+      setupBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: "1px 1px 1px 3px", borderStyle: "solid", borderTopColor: "var(--line)", borderRightColor: "var(--line)", borderBottomColor: "var(--line)", borderLeftColor: "var(--accent)", borderRadius: 6, marginBottom: 8 },
+      filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, marginBottom: 8 },
+      filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 6, color: "var(--text)", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
+      filterToggleOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
+      filterBadge: { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 17, height: 17, padding: "0 5px", borderRadius: 9, backgroundColor: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 700 },
+      filterPill: { display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 999, color: "var(--text)", padding: "3px 9px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
       filterClear: { background: "none", border: "none", color: "var(--text-3)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit", flexShrink: 0 },
-      filterPanel: { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6, padding: "12px 12px 2px", marginBottom: 10 },
+      filterPanel: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: "12px 12px 2px", marginBottom: 10 },
       filterGroupLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 11, letterSpacing: 2, color: "var(--text-3)", marginBottom: 5 },
-      chipTrans: { background: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 },
-      row: { width: "100%", display: "flex", alignItems: "center", gap: 12, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6, padding: "11px 14px", marginTop: 8, cursor: "pointer", color: "var(--text)", fontFamily: "inherit", transition: "background .15s" },
+      chipTrans: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 },
+      row: { width: "100%", display: "flex", alignItems: "center", gap: 12, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: "11px 14px", marginTop: 8, cursor: "pointer", color: "var(--text)", fontFamily: "inherit", transition: "background .15s" },
       dot: { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 },
       rowName: { display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.3 },
       rowMeta: { display: "block", fontSize: 11.5, color: "var(--text-3)", marginTop: 2 },
       rowArrow: { color: "var(--dim)", fontSize: 20 },
-      card: { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8, padding: "16px 16px 8px", marginBottom: 16 },
+      card: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "16px 16px 8px", marginBottom: 16 },
       back: { background: "none", border: "none", color: "var(--accent)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 10, fontFamily: "inherit" },
       cardCat: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 13, letterSpacing: 2, color: "var(--accent)", textTransform: "uppercase" },
       cardTitle: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 28, fontWeight: 700, margin: "2px 0 8px", lineHeight: 1.1 },
       cardInfo: { color: "var(--text-2)", fontSize: 14, lineHeight: 1.55, margin: "0 0 16px" },
-      block: { borderTop: "1px solid var(--line)", padding: "13px 0" },
+      block: { borderTopWidth: 1, borderTopStyle: "solid", borderTopColor: "var(--line)", padding: "13px 0" },
       blockLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 12, letterSpacing: 3, color: "var(--text-3)", marginBottom: 4 },
       blockMain: { fontSize: 16, fontWeight: 600, marginBottom: 3 },
       blockSub: { fontSize: 13, color: "var(--text-sub)", lineHeight: 1.5 },
-      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 6 },
-      themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", border: "2px solid var(--line)", borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
-      themePreview: { position: "relative", display: "block", height: 44, borderRadius: 4, border: "1px solid", overflow: "hidden" },
+      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6 },
+      themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", borderWidth: 2, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
+      themePreview: { position: "relative", display: "block", height: 44, borderRadius: 4, borderWidth: 1, borderStyle: "solid", overflow: "hidden" },
       footer: { marginTop: 28, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 },
     };
 
