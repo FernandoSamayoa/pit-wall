@@ -104,6 +104,57 @@
     // Config se carga en runtime desde /api/config (las keys viven en variables de entorno de Vercel)
     let CONFIGS = null;
 
+    // ---- Sincronización ----
+    // Cada sección es un mapa clave → valor. Se sincroniza por diferencias:
+    // "base" es la última versión confirmada por Firestore, y lo que difiera
+    // entre la base y el estado local son cambios pendientes de subir.
+    const SYNC_KEYS = ["customKg", "tieMm", "preMm", "miSetup"];
+    const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+    function normSync(d) {
+      d = d || {};
+      return {
+        customKg: d.customKg || {},
+        tieMm: d.tieMm || {},
+        preMm: migrarPreMm(d.preMm || {}),
+        miSetup: sanearSetup(d.miSetup || {}),
+      };
+    }
+
+    // { seccion: { clave: valor | null } }, null = la clave se borró en local
+    function diffSync(base, local) {
+      const out = {};
+      for (const s of SYNC_KEYS) {
+        const b = base[s] || {}, l = local[s] || {};
+        for (const k of new Set([...Object.keys(b), ...Object.keys(l)])) {
+          if (!igual(b[k], l[k])) (out[s] ||= {})[k] = k in l ? l[k] : null;
+        }
+      }
+      return out;
+    }
+
+    function aplicarDiff(data, diff) {
+      const out = {};
+      for (const s of SYNC_KEYS) {
+        out[s] = { ...(data[s] || {}) };
+        for (const [k, v] of Object.entries(diff[s] || {})) {
+          if (v === null) delete out[s][k]; else out[s][k] = v;
+        }
+      }
+      return out;
+    }
+
+    // La base se guarda junto con su código: si el código cambia, no hay base y manda Firestore
+    function leerBase(code) {
+      try {
+        const b = JSON.parse(localStorage.getItem("pitwall_sync_base") || "null");
+        return b && b.code === code ? normSync(b.data) : null;
+      } catch { return null; }
+    }
+    function guardarBase(code, data) {
+      try { localStorage.setItem("pitwall_sync_base", JSON.stringify({ code, data })); } catch {}
+    }
+
     function genSyncCode() {
       const a = Math.random().toString(36).slice(2, 6).toUpperCase();
       const b = String(Math.floor(Math.random() * 900) + 100);
@@ -1001,8 +1052,41 @@
       const [setupModal, setSetupModal] = useState(false);
       const [setupDraft, setSetupDraft] = useState({});
       const saveTimer = useRef(null);
-      const skipNextSave = useRef(false);
       const fbReady = useRef(false);
+      const baseRef = useRef(null);
+      const localRef = useRef(null);
+      localRef.current = { customKg, tieMm, preMm, miSetup };
+      const syncCodeRef = useRef(syncCode);
+      syncCodeRef.current = syncCode;
+
+      // Reemplaza el estado local completo (solo las secciones que cambiaron)
+      const aplicarLocal = (next) => {
+        const cur = localRef.current;
+        localRef.current = next;
+        if (!igual(cur.customKg, next.customKg)) setCustomKg(next.customKg);
+        if (!igual(cur.tieMm, next.tieMm)) setTieMm(next.tieMm);
+        if (!igual(cur.preMm, next.preMm)) setPreMm(next.preMm);
+        if (!igual(cur.miSetup, next.miSetup)) setMiSetup(next.miSetup);
+      };
+
+      // Sube solo lo que cambió respecto a la base, con merge: no pisa claves
+      // que otro dispositivo haya cambiado mientras tanto.
+      const flush = (code = syncCodeRef.current) => {
+        clearTimeout(saveTimer.current);
+        if (!CONFIGS || !baseRef.current) return;
+        const d = diffSync(baseRef.current, localRef.current);
+        if (!Object.keys(d).length) return;
+        const borrar = firebase.firestore.FieldValue.delete();
+        const upd = {};
+        for (const [s, m] of Object.entries(d)) {
+          upd[s] = {};
+          for (const [k, v] of Object.entries(m)) upd[s][k] = v === null ? borrar : v;
+        }
+        CONFIGS.doc(code).set(upd, { merge: true })
+          .catch(e => console.warn("No se pudo sincronizar:", e));
+      };
+      const flushRef = useRef(flush);
+      flushRef.current = flush;
 
       // Carga config desde /api/config sin exponer keys en el código fuente
       useEffect(() => {
@@ -1017,40 +1101,56 @@
           .catch(e => console.warn("Firebase no disponible:", e));
       }, []);
 
-      // Carga desde Firestore cuando cambia syncCode o Firebase está listo
+      // Escucha el documento en tiempo real. Cada versión confirmada por el
+      // servidor pasa a ser la base, y los cambios locales pendientes se
+      // reaplican encima (y se suben), así nada se pierde al recargar.
       useEffect(() => {
         if (!firebaseReady) return;
         clearTimeout(saveTimer.current);
+        baseRef.current = leerBase(syncCode);
         setSyncing(true);
-        CONFIGS.doc(syncCode).get()
-          .then(snap => {
-            if (snap.exists) {
-              const d = snap.data();
-              if (d.customKg || d.tieMm || d.preMm || d.miSetup) skipNextSave.current = true;
-              if (d.customKg) setCustomKg(d.customKg);
-              if (d.tieMm) setTieMm(d.tieMm);
-              if (d.preMm) setPreMm(migrarPreMm(d.preMm));
-              if (d.miSetup) setMiSetup(sanearSetup(d.miSetup));
-            }
-            setSyncing(false);
-          })
-          .catch(() => setSyncing(false));
+        const unsub = CONFIGS.doc(syncCode).onSnapshot({ includeMetadataChanges: true }, (snap) => {
+          // Ignora el eco de nuestras escrituras sin confirmar y las lecturas sin conexión
+          if (snap.metadata.hasPendingWrites || snap.metadata.fromCache) return;
+          const remoto = normSync(snap.exists ? snap.data() : {});
+          const base = baseRef.current;
+          // Sin base (código nuevo en este dispositivo) manda Firestore; si el
+          // documento aún no existe, lo local se sube como punto de partida.
+          const pendiente = base ? diffSync(base, localRef.current)
+            : snap.exists ? {} : diffSync(normSync({}), localRef.current);
+          baseRef.current = remoto;
+          guardarBase(syncCode, remoto);
+          aplicarLocal(aplicarDiff(remoto, pendiente));
+          if (Object.keys(pendiente).length) flushRef.current();
+          setSyncing(false);
+        }, (e) => { console.warn("Sync no disponible:", e); setSyncing(false); });
+        // Lo pendiente se sube al código que se está dejando, no al nuevo
+        return () => { flushRef.current(syncCode); unsub(); };
       }, [syncCode, firebaseReady]);
 
-      // Guarda en Firestore + localStorage cada vez que cambian los ajustes
+      // Guarda en localStorage al instante y sube a Firestore con un pequeño debounce
       useEffect(() => {
         localStorage.setItem("pitwall_kg", JSON.stringify(customKg));
         localStorage.setItem("pitwall_tie_mm", JSON.stringify(tieMm));
         localStorage.setItem("pitwall_pre_mm", JSON.stringify(preMm));
         localStorage.setItem("pitwall_mi_setup", JSON.stringify(miSetup));
-        if (!fbReady.current) return;
-        if (skipNextSave.current) { skipNextSave.current = false; return; }
+        if (!fbReady.current || !baseRef.current) return;
         clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
-          CONFIGS.doc(syncCode).set({ customKg, tieMm, preMm, miSetup }).catch(() => {});
-        }, 800);
-        return () => clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => flushRef.current(), 800);
       }, [customKg, tieMm, preMm, miSetup]);
+
+      // Al pasar a segundo plano o cerrar (en iPhone casi nunca hay "unload"),
+      // sube lo pendiente sin esperar el debounce
+      useEffect(() => {
+        const alOcultar = () => { if (document.visibilityState === "hidden") flushRef.current(); };
+        const alSalir = () => flushRef.current();
+        document.addEventListener("visibilitychange", alOcultar);
+        window.addEventListener("pagehide", alSalir);
+        return () => {
+          document.removeEventListener("visibilitychange", alOcultar);
+          window.removeEventListener("pagehide", alSalir);
+        };
+      }, []);
 
       const applyCode = () => {
         const c = codeInput.trim().toUpperCase();
