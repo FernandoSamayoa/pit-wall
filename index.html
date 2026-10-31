@@ -903,7 +903,7 @@
       const col = "currentColor";
       const sw = activo ? 5 : 3.5;
       return (
-        <svg width="64" height="64" viewBox="0 0 100 100" aria-hidden="true" style={{ color: activo ? "var(--accent)" : "var(--dim)" }}>
+        <svg width="64" height="64" viewBox="0 0 100 100" aria-hidden="true" style={{ color: activo ? "var(--accent)" : "var(--dim)", display: "block", width: "100%", maxWidth: 64, height: "auto", margin: "0 auto" }}>
           {tipo === "redondo" && (
             <g stroke={col} strokeWidth={sw} fill="none">
               <circle cx="50" cy="50" r="38" />
@@ -1257,7 +1257,7 @@
             </span>
             {!showCodeInput ? (
               <>
-                <code style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 2, backgroundColor: "var(--surface)", padding: "2px 10px", borderRadius: 4, borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)" }}>
+                <code style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 2, backgroundColor: "var(--surface)", padding: "2px 10px", borderRadius: 4, borderWidth: 1, borderStyle: "solid", ...bc("var(--line)") }}>
                   {syncCode}
                 </code>
                 <button onClick={() => navigator.clipboard.writeText(syncCode)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>copiar</button>
@@ -1271,10 +1271,10 @@
                   onKeyDown={e => e.key === "Enter" && applyCode()}
                   placeholder="ej. XKPQ-847"
                   maxLength={9}
-                  style={{ width: 110, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--accent)", borderRadius: 4, color: "var(--text)", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
+                  style={{ width: 110, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--accent)"), borderRadius: 4, color: "var(--text)", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
                   autoFocus
                 />
-                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>usar</button>
+                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>usar</button>
                 <button onClick={() => { setShowCodeInput(false); setCodeInput(""); }} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cancelar</button>
               </>
             )}
@@ -1293,9 +1293,9 @@
                 const on = theme === th.key;
                 return (
                   <button key={th.key} role="radio" aria-checked={on} onClick={() => setTheme(th.key)}
-                    style={{ ...S.themeSwatch, borderColor: on ? "var(--accent)" : "var(--line)" }}>
-                    <span aria-hidden="true" style={{ ...S.themePreview, backgroundColor: th.t.bg, borderColor: th.t.line }}>
-                      <span style={{ position: "absolute", left: 6, right: 6, top: 6, height: 12, borderRadius: 3, backgroundColor: th.t.surface, borderWidth: 1, borderStyle: "solid", borderColor: th.t.line }} />
+                    style={{ ...S.themeSwatch, ...bc(on ? "var(--accent)" : "var(--line)") }}>
+                    <span aria-hidden="true" style={{ ...S.themePreview, backgroundColor: th.t.bg, ...bc(th.t.line) }}>
+                      <span style={{ position: "absolute", left: 6, right: 6, top: 6, height: 12, borderRadius: 3, backgroundColor: th.t.surface, borderWidth: 1, borderStyle: "solid", ...bc(th.t.line) }} />
                       <span style={{ position: "absolute", left: 6, bottom: 6, width: "42%", height: 7, borderRadius: 4, backgroundColor: th.t.accent }} />
                       <span style={{ position: "absolute", right: 6, bottom: 6, width: "28%", height: 7, borderRadius: 4, backgroundColor: th.t.text }} />
                     </span>
@@ -1330,7 +1330,7 @@
 
               <div style={S.block}>
                 <div style={S.blockLabel}>VOLANTE</div>
-                <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 8, alignItems: "start", maxWidth: 400, marginBottom: 8 }}>
                   {["redondo", "gt3", "neo", "formula", "podium"].map((w) => (
                     <div key={w} style={{ textAlign: "center", opacity: rec.wheelKey === w ? 1 : 0.45 }}>
                       <WheelIcon tipo={w} activo={rec.wheelKey === w} />
@@ -1433,7 +1433,7 @@
                           placeholder="kg"
                           value={userKg || ""}
                           onChange={e => handleKgChange(e.target.value)}
-                          style={{ width: 62, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
+                          style={{ width: 62, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
                         />
                         <span style={{ fontSize: 12, color: "var(--text-3)" }}>kg</span>
                         {userKg && (
@@ -1518,7 +1518,7 @@
                       <button
                         onClick={() => setMiSetupOn(false)}
                         title="Quitar filtro de mi setup"
-                        style={{ ...S.filterPill, borderColor: "var(--accent)", color: "var(--accent)" }}
+                        style={{ ...S.filterPill, ...bc("var(--accent)"), color: "var(--accent)" }}
                       >
                         ★ Mi setup
                         <span aria-hidden="true" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1 }}>×</span>
@@ -1531,7 +1531,7 @@
                           key={g.key}
                           onClick={() => g.set("todas")}
                           title={`Quitar filtro de ${g.label.toLowerCase()}`}
-                          style={{ ...S.filterPill, ...(o.color ? { borderColor: o.color, color: o.color } : {}) }}
+                          style={{ ...S.filterPill, ...(o.color ? { ...bc(o.color), color: o.color } : {}) }}
                         >
                           {o.color && <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: o.color, flexShrink: 0 }} />}
                           {o.short || o.txt}
@@ -1557,7 +1557,7 @@
                         {g.opts.map((o) => {
                           const on = g.value === o.v;
                           const activeStyle = o.color
-                            ? { backgroundColor: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
+                            ? { backgroundColor: o.color, color: "#fff", ...bc(o.color), fontWeight: 600 }
                             : S.chipTrans;
                           return (
                             <button key={o.v} onClick={() => g.set(o.v)} style={{ ...S.chip, ...(on ? activeStyle : {}) }}>
@@ -1617,7 +1617,7 @@
               aria-modal="true"
               aria-label="Mi setup actual"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>MI SETUP ACTUAL</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Lo que tienes montado ahora en los pedales. Se guarda y se sincroniza, y te permite filtrar los carros de cualquier simulador por esta configuración. Puedes cambiarlo cuando quieras.
@@ -1633,7 +1633,7 @@
                       {[{ v: undefined, txt: "Sin definir" }, ...g.opts].map((o) => {
                         const on = setupDraft[g.k] === o.v;
                         const activeStyle = o.color
-                          ? { backgroundColor: o.color, color: "#fff", borderColor: o.color, fontWeight: 600 }
+                          ? { backgroundColor: o.color, color: "#fff", ...bc(o.color), fontWeight: 600 }
                           : S.chipTrans;
                         return (
                           <button
@@ -1655,7 +1655,7 @@
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setSetupModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1669,7 +1669,7 @@
               aria-modal="true"
               aria-label="Modificar longitudes de tie-rod"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>TIE-ROD · LONGITUDES</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Stock es fijo ({TIE_STOCK_MM} mm), no se puede cambiar. Corta y larga son tus longitudes medidas en el pedal: aplican a todos los carros y simuladores.
@@ -1692,7 +1692,7 @@
                           onChange={(e) => setTieDraft((prev) => ({ ...prev, [k]: e.target.value }))}
                           onKeyDown={(e) => e.key === "Enter" && saveTieMm()}
                           autoFocus={k === "corta"}
-                          style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                          style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
                         />
                         <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
                       </>
@@ -1701,7 +1701,7 @@
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setTieModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1715,7 +1715,7 @@
               aria-modal="true"
               aria-label="Modificar preload en milímetros"
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
                 <div style={{ ...S.blockLabel, marginBottom: 2 }}>PRELOAD · MILÍMETROS</div>
                 <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
                   Valor para la combinación{" "}
@@ -1734,14 +1734,14 @@
                       onChange={(e) => setPreDraft((prev) => ({ ...prev, [lvl]: e.target.value }))}
                       onKeyDown={(e) => e.key === "Enter" && savePreMm()}
                       autoFocus={lvl === preLevelsOf(rec)[0]}
-                      style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
+                      style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
                     />
                     <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
                   </div>
                 ))}
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button onClick={() => setPreModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 }}>Guardar</button>
+                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
                 </div>
               </div>
             </div>
@@ -1750,35 +1750,39 @@
       );
     }
 
+    // border-color es abreviada: en Safari, con var() y estilos que se alternan, no se repinta bien.
+    // Por eso el color del borde va siempre por lado (propiedades largas).
+    function bc(c) { return { borderTopColor: c, borderRightColor: c, borderBottomColor: c, borderLeftColor: c }; }
+
     const S = {
       root: { minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--text)", fontFamily: "'IBM Plex Sans', sans-serif", padding: "0 14px 40px", maxWidth: 760, margin: "0 auto" },
       header: { padding: "22px 0 4px" },
-      flag: { display: "flex", width: 64, height: 8, borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", marginBottom: 10 },
+      flag: { display: "flex", width: 64, height: 8, borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), marginBottom: 10 },
       flagSq: { flex: 1 },
       h1: { fontFamily: "'Saira Condensed', sans-serif", fontWeight: 700, fontSize: 42, letterSpacing: 6, margin: 0, lineHeight: 1 },
       sub: { color: "var(--text-3)", fontSize: 13, margin: "6px 0 0" },
       tabs: { display: "flex", gap: 8, margin: "18px 0 14px" },
-      tab: { flex: 1, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, color: "var(--text)", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 0 },
-      tabOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
-      search: { width: "100%", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, color: "var(--text)", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
-      chip: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 999, color: "var(--text-2)", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
-      chipOn: { backgroundColor: "var(--text)", color: "var(--bg)", borderColor: "var(--text)", fontWeight: 600 },
+      tab: { flex: 1, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, color: "var(--text)", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 0, fontFamily: "inherit" },
+      tabOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)") },
+      search: { width: "100%", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, color: "var(--text)", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
+      chip: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 999, color: "var(--text-2)", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
+      chipOn: { backgroundColor: "var(--text)", color: "var(--bg)", ...bc("var(--text)"), fontWeight: 600 },
       setupBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: "1px 1px 1px 3px", borderStyle: "solid", borderTopColor: "var(--line)", borderRightColor: "var(--line)", borderBottomColor: "var(--line)", borderLeftColor: "var(--accent)", borderRadius: 6, marginBottom: 8 },
-      filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, marginBottom: 8 },
-      filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 6, color: "var(--text)", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
-      filterToggleOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)" },
+      filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, marginBottom: 8 },
+      filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 6, color: "var(--text)", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
+      filterToggleOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)") },
       filterBadge: { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 17, height: 17, padding: "0 5px", borderRadius: 9, backgroundColor: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 700 },
-      filterPill: { display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line-strong)", borderRadius: 999, color: "var(--text)", padding: "3px 9px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+      filterPill: { display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 999, color: "var(--text)", padding: "3px 9px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
       filterClear: { background: "none", border: "none", color: "var(--text-3)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit", flexShrink: 0 },
-      filterPanel: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: "12px 12px 2px", marginBottom: 10 },
+      filterPanel: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: "12px 12px 2px", marginBottom: 10 },
       filterGroupLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 11, letterSpacing: 2, color: "var(--text-3)", marginBottom: 5 },
-      chipTrans: { backgroundColor: "var(--accent)", color: "var(--on-accent)", borderColor: "var(--accent)", fontWeight: 600 },
-      row: { width: "100%", display: "flex", alignItems: "center", gap: 12, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: "11px 14px", marginTop: 8, cursor: "pointer", color: "var(--text)", fontFamily: "inherit", transition: "background .15s" },
+      chipTrans: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 },
+      row: { width: "100%", display: "flex", alignItems: "center", gap: 12, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: "11px 14px", marginTop: 8, cursor: "pointer", color: "var(--text)", fontFamily: "inherit", transition: "background .15s" },
       dot: { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 },
       rowName: { display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.3 },
       rowMeta: { display: "block", fontSize: 11.5, color: "var(--text-3)", marginTop: 2 },
       rowArrow: { color: "var(--dim)", fontSize: 20 },
-      card: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 8, padding: "16px 16px 8px", marginBottom: 16 },
+      card: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "16px 16px 8px", marginBottom: 16 },
       back: { background: "none", border: "none", color: "var(--accent)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 10, fontFamily: "inherit" },
       cardCat: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 13, letterSpacing: 2, color: "var(--accent)", textTransform: "uppercase" },
       cardTitle: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 28, fontWeight: 700, margin: "2px 0 8px", lineHeight: 1.1 },
@@ -1787,8 +1791,8 @@
       blockLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 12, letterSpacing: 3, color: "var(--text-3)", marginBottom: 4 },
       blockMain: { fontSize: 16, fontWeight: 600, marginBottom: 3 },
       blockSub: { fontSize: 13, color: "var(--text-sub)", lineHeight: 1.5 },
-      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6 },
-      themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", borderWidth: 2, borderStyle: "solid", borderColor: "var(--line)", borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
+      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6 },
+      themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", borderWidth: 2, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
       themePreview: { position: "relative", display: "block", height: 44, borderRadius: 4, borderWidth: 1, borderStyle: "solid", overflow: "hidden" },
       footer: { marginTop: 28, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 },
     };
