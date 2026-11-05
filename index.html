@@ -71,6 +71,68 @@
         marker: "#D6FFE0", "marker-glow": "rgba(57,255,136,0.7)", overlay: "rgba(0,4,2,0.75)" } },
     ];
 
+    // Temas inspirados en presets de color con degradado. Se generan a partir de [key, nombre, matiz del fondo, saturación, acento]:
+    // el fondo y las superficies se tiñen con el matiz y el acento es el color más representativo del degradado.
+    (function () {
+      function hsl(h, s, l) {
+        s /= 100; l /= 100;
+        var a = s * Math.min(l, 1 - l);
+        var f = function (n) {
+          var k = (n + h / 30) % 12;
+          var c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+          return Math.round(255 * c).toString(16).padStart(2, "0");
+        };
+        return "#" + f(0) + f(8) + f(4);
+      }
+      function glow(hex, a) {
+        var n = parseInt(hex.slice(1), 16);
+        return "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+      }
+      [
+        ["trackthirtytwo", "TrackThirtyTwo", 222, 28, "#FF5A1F"],
+        ["heritage", "Heritage", 220, 30, "#FF4B55"],
+        ["racing", "Racing", 80, 14, "#E6E21F"],
+        ["arctic", "Arctic", 200, 30, "#5FE3FF"],
+        ["sunset", "Sunset", 14, 26, "#FF8A1F"],
+        ["rainbow", "Rainbow", 255, 22, "#FFD21F"],
+        ["citrus", "Citrus", 95, 24, "#D4F000"],
+        ["tokyo", "Tokyo", 262, 30, "#FF2E9A"],
+        ["gulfoil", "Gulf Oil", 205, 38, "#FF6A1A"],
+        ["bubblegum", "Bubblegum", 330, 24, "#FF6FA8"],
+        ["neon", "Neon", 285, 30, "#E040FF"],
+        ["retro", "Retro", 175, 26, "#FFA573"],
+        ["octane", "Octane", 20, 22, "#FFA51F"],
+        ["aurora", "Aurora", 190, 34, "#1FF2A0"],
+        ["nebula", "Nebula", 275, 34, "#FF4FA0"],
+        ["peacock", "Peacock", 250, 30, "#17D9B8"],
+        ["candycane", "Candycane", 350, 24, "#FF2D55"],
+        ["solstice", "Solstice", 226, 36, "#FFC21F"],
+        ["tricolore", "Tricolore", 145, 20, "#35C46F"],
+        ["sakura", "Sakura", 340, 20, "#FF8FB8"],
+        ["cyber", "Cyber", 262, 36, "#F8F32B"],
+        ["velvet", "Velvet", 335, 32, "#E0618C"],
+        ["pumpkin", "Pumpkin", 270, 36, "#FF7A1A"],
+        ["festive", "Festive", 356, 38, "#35C759"],
+        ["cupid", "Cupid", 345, 36, "#FF2D6F"],
+        ["champagne", "Champagne", 40, 16, "#F5D77A"],
+        ["red", "Red", 355, 14, "#FF4D5E"],
+        ["blue", "Blue", 230, 30, "#5B7BFF"],
+        ["green", "Green", 125, 20, "#3DFF4F"],
+        ["yellow", "Yellow", 55, 14, "#FFF21F"],
+        ["orange", "Orange", 28, 18, "#FF9A1F"],
+        ["purple", "Purple", 270, 30, "#B070FF"],
+        ["pink", "Pink", 320, 28, "#FF5FB0"],
+        ["white", "White", 0, 0, "#FFFFFF"],
+      ].forEach(function (p) {
+        var h = p[2], s = p[3], acc = p[4];
+        window.PW_THEMES.push({ key: p[0], name: p[1], t: {
+          bg: hsl(h, s, 8.5), surface: hsl(h, s, 12), hover: hsl(h, s, 16), line: hsl(h, s * 0.9, 19), "line-strong": hsl(h, s * 0.8, 26), scroll: hsl(h, s * 0.8, 23),
+          dim: hsl(h, s * 0.6, 34), muted: hsl(h, s * 0.45, 48), "text-3": hsl(h, s * 0.4, 61), "text-sub": hsl(h, s * 0.4, 67), "text-2": hsl(h, s * 0.35, 77), text: hsl(h, Math.min(s * 0.5, 14), 93),
+          accent: acc, "on-accent": hsl(h, s, 8.5), red: "#D9442E", blue: "#3D7BD9", "red-text": "#E8604C", "blue-text": "#6B9BE3",
+          marker: "#fff", "marker-glow": glow(acc, 0.6), overlay: "rgba(0,0,0,0.7)" } });
+      });
+    })();
+
     (function () {
       var themes = window.PW_THEMES;
       var css = themes.map(function (th, i) {
@@ -1895,7 +1957,7 @@
       blockLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 12, letterSpacing: 3, color: "var(--text-3)", marginBottom: 4 },
       blockMain: { fontSize: 16, fontWeight: 600, marginBottom: 3 },
       blockSub: { fontSize: 13, color: "var(--text-sub)", lineHeight: 1.5 },
-      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6 },
+      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, maxHeight: 360, overflowY: "auto", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6 },
       themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", borderWidth: 2, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
       themePreview: { position: "relative", display: "block", height: 44, borderRadius: 4, borderWidth: 1, borderStyle: "solid", overflow: "hidden" },
       footer: { marginTop: 28, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 },
