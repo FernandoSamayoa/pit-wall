@@ -17,14 +17,20 @@ presión de freno (kg) entre dispositivos, vía Firebase.
 
 ## Stack técnico
 
-- **Sin build step.** Todo el frontend vive en un único [`index.html`](index.html):
-  HTML, CSS (un `<style>` con clases `pw-*`) y un componente React, todo en
-  un mismo archivo.
-- **React 18** y **Babel Standalone**, cargados desde CDN (`unpkg`) directo en
-  el `<head>`. El JSX se transpila **en el navegador**, en tiempo real, dentro
-  de un `<script type="text/babel">` — no hay Webpack/Vite ni `node_modules`.
-- **Firebase Firestore** (SDK "compat", también desde CDN) para sincronizar
-  entre dispositivos los valores de resorte que el usuario ingresa a mano.
+- **Un solo archivo fuente.** Todo el frontend vive en [`index.html`](index.html):
+  HTML, CSS (un `<style>` con clases `pw-*`) y un componente React.
+- **React 18** desde CDN (`unpkg`). El JSX va dentro de un
+  `<script type="text/babel">`: al abrir el archivo tal cual, **Babel
+  Standalone** lo transpila en el navegador, así que para desarrollar no hace
+  falta instalar nada.
+- **Build de producción** ([`build.mjs`](build.mjs), con esbuild): al
+  desplegar, Vercel compila y minifica ese JSX a un archivo aparte y publica
+  un `index.html` sin Babel (~600 KB menos de descarga).
+- **Firebase Firestore** (SDK "compat", desde CDN) para sincronizar entre
+  dispositivos los valores que el usuario ingresa a mano. Se descarga después
+  del primer pintado, no en el `<head>`.
+- **Service worker** ([`sw.js`](sw.js)): guarda la app para abrirla rápido y
+  sin conexión. Solo se registra en el sitio desplegado (https).
 - **Vercel Serverless Function** ([`api/config.js`](api/config.js)) que expone
   la config de Firebase leyendo variables de entorno, para no commitear esas
   claves en el HTML.
@@ -35,7 +41,11 @@ presión de freno (kg) entre dispositivos, vía Firebase.
 
 ```
 .
-├── index.html        # Toda la app: markup, estilos y componente React (JSX vía Babel in-browser)
+├── index.html        # Toda la app: markup, estilos y componente React (JSX)
+├── build.mjs          # Build de producción: compila el JSX y arma dist/
+├── sw.js              # Service worker (caché y uso sin conexión)
+├── package.json       # Solo declara esbuild para el build
+├── vercel.json        # Comando de build, carpeta de salida y cabeceras de caché
 ├── api/
 │   └── config.js      # Función serverless de Vercel: sirve la config de Firebase desde env vars
 ├── manifest.json      # Manifest de PWA (nombre, iconos, colores)
@@ -44,9 +54,9 @@ presión de freno (kg) entre dispositivos, vía Firebase.
 └── icon-512.png
 ```
 
-No hay `package.json`: no se instala nada para correr la app, y Vercel
-despliega `index.html` como sitio estático y `api/` como función serverless
-sin paso de build.
+Para correr la app en local no se instala nada. Al desplegar, Vercel ejecuta
+`npm run build`, publica la carpeta `dist/` como sitio estático y `api/` como
+función serverless.
 
 ## Cómo funciona, a alto nivel
 
@@ -71,7 +81,7 @@ carros, categorías, simuladores, o cambiar las reglas de recomendación), ver
 
 ## Ejecutar en local
 
-No hace falta ningún build. Alcanza con abrir `index.html` en el navegador
+No hace falta ningún build ni tener Node instalado. Alcanza con abrir `index.html` en el navegador
 (doble clic, o `Start-Process index.html` en PowerShell). Con eso funciona
 todo **excepto** la sincronización entre dispositivos: el `fetch('/api/config')`
 va a fallar (no hay servidor sirviendo `/api`), la app lo captura, Firebase
@@ -97,9 +107,18 @@ Las variables que necesita `api/config.js` son:
 
 ## Despliegue
 
-El proyecto está pensado para Vercel: detecta `index.html` como sitio
-estático y `api/config.js` como función serverless automáticamente, sin
-configuración adicional. Las tres variables de entorno de arriba se cargan
+El proyecto está pensado para Vercel. [`vercel.json`](vercel.json) le indica
+que ejecute `npm run build` y publique `dist/`; `api/config.js` se detecta
+como función serverless automáticamente. El build genera:
+
+- `dist/index.html`: la página sin Babel.
+- `dist/assets/app.<hash>.js`: el JSX compilado y minificado. El hash cambia
+  con el contenido, así que se cachea para siempre.
+- `dist/sw.js`: el service worker con la versión del build; cada despliegue
+  estrena su caché y borra la anterior.
+
+Con Node instalado se puede probar el build en local con `npm install` y
+`npm run build`. Las tres variables de entorno de arriba se cargan
 en **Project Settings → Environment Variables** del proyecto en Vercel.
 
 Las claves de Firebase Web no son secretas en el sentido estricto (quedan

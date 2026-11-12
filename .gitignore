@@ -5,3 +5,7 @@
 # Claude Code: local settings y worktrees temporales de agentes
 .claude/settings.local.json
 .claude/worktrees/
+
+# Build de producción
+node_modules/
+dist/

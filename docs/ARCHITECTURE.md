@@ -13,14 +13,17 @@ bloque y cómo tocarlo sin romper el resto.
 
 De arriba a abajo, `index.html` tiene estas piezas, en este orden:
 
-1. **`<head>`**: carga React 18, ReactDOM (builds de producción), el SDK
-   "compat" de Firebase (`firebase-app-compat.js` +
-   `firebase-firestore-compat.js`) y Babel Standalone, todos desde CDN.
-   También las fuentes, el manifest de PWA, metatags, el `<style>` con
+1. **`<head>`**: carga React 18, ReactDOM (builds de producción) y Babel
+   Standalone desde CDN. Babel solo sirve para abrir el archivo tal cual:
+   el build de producción (`build.mjs`) quita esa etiqueta y reemplaza el
+   `<script type="text/babel">` por el JSX ya compilado, así que **tiene
+   que seguir habiendo un único bloque `text/babel`**. También las fuentes, el manifest de PWA, metatags, el `<style>` con
    **todo el CSS de la app** (clases `pw-*`) y el script de temas
    (`PW_THEMES`).
 2. **Bootstrap de Firebase y `genSyncCode()`**: variable `CONFIGS` (se llena
-   más tarde con la referencia a la colección de Firestore) y el generador
+   más tarde con la referencia a la colección de Firestore),
+   `cargarFirebase()` (inyecta el SDK "compat" después del primer pintado,
+   en vez de cargarlo en el `<head>`) y el generador
    del código de sincronización tipo `AB12-345`.
 3. **`CATS`**: diccionario de categorías (`formula`, `gt3`, `rally`, etc.).
 4. **`c(...)`**: función fábrica para crear un registro de carro.
@@ -204,7 +207,8 @@ final de `gearboxOf`).
 
 ### Efectos (`useEffect`)
 
-1. **Al montar**: hace `fetch('/api/config')`, inicializa Firebase con esa
+1. **Al montar**: hace `fetch('/api/config')` y descarga el SDK con
+   `cargarFirebase()` en paralelo, inicializa Firebase con esa
    config y guarda la referencia a la colección `configs` en `CONFIGS`. Si
    falla (por ejemplo en local sin `vercel dev`), solo loguea un warning y
    la app sigue funcionando sin sync.
