@@ -210,8 +210,10 @@ final de `gearboxOf`).
 1. **Al montar**: hace `fetch('/api/config')` y descarga el SDK con
    `cargarFirebase()` en paralelo, inicializa Firebase con esa
    config y guarda la referencia a la colección `configs` en `CONFIGS`. Si
-   falla (por ejemplo en local sin `vercel dev`), solo loguea un warning y
-   la app sigue funcionando sin sync.
+   falla (por ejemplo en local sin `vercel dev`, o al abrir la app sin
+   conexión), loguea un warning y la app sigue funcionando sin sync; lo
+   reintenta sola cuando el navegador recupera la red (`online`) o la app
+   vuelve a primer plano, y entonces se sube lo guardado mientras tanto.
 2. **Cuando cambia `syncCode` o `firebaseReady`**: lee el documento
    `configs/{syncCode}` de Firestore y, si tiene `customKg`, lo carga (con
    un flag `skipNextSave` para no volver a escribir lo que se acaba de leer).

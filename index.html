@@ -363,13 +363,15 @@
         s.src = src;
         s.crossOrigin = "anonymous";
         s.onload = ok;
-        s.onerror = () => err(new Error("No cargó " + src));
+        s.onerror = () => { s.remove(); err(new Error("No cargó " + src)); };
         document.head.appendChild(s);
       });
     }
+    // Se puede llamar varias veces (reintentos): lo que ya cargó no se repite
     function cargarFirebase() {
-      return cargarScript(FIREBASE_SDK + "firebase-app-compat.js")
-        .then(() => cargarScript(FIREBASE_SDK + "firebase-firestore-compat.js"));
+      const paso = (archivo, listo) => listo() ? Promise.resolve() : cargarScript(FIREBASE_SDK + archivo);
+      return paso("firebase-app-compat.js", () => !!window.firebase)
+        .then(() => paso("firebase-firestore-compat.js", () => !!window.firebase.firestore));
     }
 
     // ---- Sincronización ----
@@ -1473,16 +1475,34 @@
       const flushRef = useRef(flush);
       flushRef.current = flush;
 
-      // Carga config desde /api/config sin exponer keys en el código fuente
+      // Carga config desde /api/config sin exponer keys en el código fuente.
+      // Si la app se abrió sin conexión, reintenta sola al recuperar la red o
+      // al volver a primer plano, y entonces sube lo guardado mientras tanto.
       useEffect(() => {
-        Promise.all([fetch('/api/config').then(r => r.json()), cargarFirebase()])
-          .then(([cfg]) => {
-            firebase.initializeApp(cfg);
-            CONFIGS = firebase.firestore().collection("configs");
-            fbReady.current = true;
-            setFirebaseReady(true);
-          })
-          .catch(e => console.warn("Firebase no disponible:", e));
+        let activo = true, conectando = false;
+        const conectar = () => {
+          if (!activo || conectando || fbReady.current) return;
+          conectando = true;
+          Promise.all([fetch('/api/config').then(r => r.json()), cargarFirebase()])
+            .then(([cfg]) => {
+              if (!activo) return;
+              firebase.initializeApp(cfg);
+              CONFIGS = firebase.firestore().collection("configs");
+              fbReady.current = true;
+              setFirebaseReady(true);
+            })
+            .catch(e => console.warn("Firebase no disponible:", e))
+            .finally(() => { conectando = false; });
+        };
+        const alVolver = () => { if (document.visibilityState === "visible") conectar(); };
+        conectar();
+        window.addEventListener("online", conectar);
+        document.addEventListener("visibilitychange", alVolver);
+        return () => {
+          activo = false;
+          window.removeEventListener("online", conectar);
+          document.removeEventListener("visibilitychange", alVolver);
+        };
       }, []);
 
       // Escucha el documento en tiempo real. Cada versión confirmada por el
