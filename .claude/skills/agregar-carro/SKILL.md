@@ -6,13 +6,15 @@ description: Agrega vehículos al catálogo de Pit Wall (index.html) con la conf
 
 # Agregar un vehículo a Pit Wall
 
-Pit Wall vive completa en `index.html` (un solo archivo, React + Babel por CDN). Para cada carro recomienda: **volante** (uno de 5 aros: Fanatec y Simagic), **modo de cambio** (levas / palanca secuencial / palanca en H + embrague VRS) y **freno VRS** (un perfil por tipo de asistencia que define resorte, tie-rod, preload y rango de kg). Agregar un carro bien = investigar el carro real → mapear al modelo de datos → insertar la entrada `c(...)` en el array del simulador.
+Pit Wall vive completa en `index.html`: un solo archivo fuente con el JSX dentro de un `<script type="text/babel">`. En local se abre tal cual (Babel lo compila en el navegador); al desplegar, Vercel lo compila con `build.mjs`. Agregar carros no requiere tocar el build ni instalar nada. Para cada carro recomienda: **volante** (uno de 5 aros: Fanatec y Simagic), **modo de cambio** (levas / palanca secuencial / palanca en H + embrague VRS) y **freno VRS** (un perfil por tipo de asistencia que define resorte, tie-rod, preload y rango de kg). Agregar un carro bien = investigar el carro real → mapear al modelo de datos → insertar la entrada `c(...)` en el array del simulador.
 
 La regla más importante de toda la app: **el perfil de freno se elige por el tipo de asistencia del carro real (servo, ABS, downforce), no por qué tan rápido es**. Un carro de calle con servo y una copa ligera sin servo usan los dos resorte azul, pero son perfiles distintos con tie-rod, preload y calibración separados.
 
 ## Si piden revisar qué falta en un simulador
 
 Una sola WebFetch a la lista oficial de carros, compárala con los nombres del array (Grep `c("` en el array correspondiente) e investiga solo los que falten. No investigues los que ya están.
+
+Si el contenido nuevo viene con una versión o temporada nueva del simulador (p. ej. iRacing 2027 S1, AC EVO v1.0), actualiza también su `v` en la constante `SIMS` de `index.html`. Es el único lugar: de ahí salen la pestaña y el pie de la lista.
 
 ## Flujo
 
@@ -54,5 +56,7 @@ c("Otro carro", "clasico", 1989, "H", "Descripción.", { b: "raceNoServo", notas
 ### 5. Verifica
 
 - `cat` existe en `CATS`, el `b` (si lo pusiste) existe en `BRAKES`, y `t` es un código válido.
-- La sintaxis JS es válida (comillas escapadas en la descripción si hace falta).
+- La sintaxis JS es válida (comillas escapadas en la descripción si hace falta). Importa más que antes: un error de sintaxis hace fallar el build de Vercel y el despliegue no sale.
+- El nombre (`n`) es único dentro de su array: es la `key` de React y la referencia con la que el historial del navegador reabre la ficha.
+- La descripción no contiene el texto `</script>`: cerraría el bloque `text/babel` y rompería tanto la página como el build.
 - Reporta al usuario en pocas líneas qué elegiste y **por qué** (asistencia de freno, tipo de caja, volante real).

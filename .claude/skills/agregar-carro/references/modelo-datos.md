@@ -2,6 +2,8 @@
 
 Todo vive en `index.html`. Tablas de referencia para mapear un carro real a la entrada `c(...)`.
 
+Cómo se ve cada dato en la app, para elegir con criterio: la fila de la lista muestra el color del resorte, la categoría, el año, el aro y una etiqueta con el cambio (`t`); la ficha abre con tres mosaicos (volante, cambio, freno) y debajo el detalle. La descripción (`i`) se recorta a 3 líneas con "ver más", así que lo más importante del carro va en las primeras oraciones.
+
 ## Contenido
 
 1. [Categorías (`CATS`)](#1-categorías-cats)
