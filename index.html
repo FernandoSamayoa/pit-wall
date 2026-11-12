@@ -14,11 +14,12 @@
   <meta name="apple-mobile-web-app-title" content="PIT WALL" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+  <!-- Versiones exactas: "react@18" responde con una redirección y no se puede cachear para siempre -->
+  <script defer crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script defer crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <!-- Babel solo se usa al abrir este archivo tal cual (desarrollo). El build de
+       producción (build.mjs) quita esta línea y compila el JSX de abajo. -->
   <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
   <style>
     /* Toda la presentación vive aquí, con clases pw-*. Los colores salen siempre de las
@@ -352,6 +353,24 @@
     // ---- Firebase ----
     // Config se carga en runtime desde /api/config (las keys viven en variables de entorno de Vercel)
     let CONFIGS = null;
+
+    // El SDK no va en el <head>: se descarga después del primer pintado,
+    // porque la app funciona completa sin él y solo lo usa el sync.
+    const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/9.22.2/";
+    function cargarScript(src) {
+      return new Promise((ok, err) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.crossOrigin = "anonymous";
+        s.onload = ok;
+        s.onerror = () => err(new Error("No cargó " + src));
+        document.head.appendChild(s);
+      });
+    }
+    function cargarFirebase() {
+      return cargarScript(FIREBASE_SDK + "firebase-app-compat.js")
+        .then(() => cargarScript(FIREBASE_SDK + "firebase-firestore-compat.js"));
+    }
 
     // ---- Sincronización ----
     // Cada sección es un mapa clave → valor. Se sincroniza por diferencias:
@@ -1456,9 +1475,8 @@
 
       // Carga config desde /api/config sin exponer keys en el código fuente
       useEffect(() => {
-        fetch('/api/config')
-          .then(r => r.json())
-          .then(cfg => {
+        Promise.all([fetch('/api/config').then(r => r.json()), cargarFirebase()])
+          .then(([cfg]) => {
             firebase.initializeApp(cfg);
             CONFIGS = firebase.firestore().collection("configs");
             fbReady.current = true;
@@ -2296,6 +2314,14 @@
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+    // El service worker solo se registra en el sitio desplegado (https):
+    // guarda la app para abrirla al instante y sin conexión. Ver sw.js.
+    if ("serviceWorker" in navigator && location.protocol === "https:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(e => console.warn("Sin service worker:", e));
+      });
+    }
   </script>
 </body>
 </html>
