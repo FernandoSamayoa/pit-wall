@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>PIT WALL — Configurador de rig</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
@@ -12,13 +12,200 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="PIT WALL" />
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
   <style>
-    body { margin: 0; background: var(--bg); }
+    /* Toda la presentación vive aquí, con clases pw-*. Los colores salen siempre de las
+       variables del tema; .rojo / .azul exponen el color del resorte como --sc / --sct. */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    :root { --r: 10px; --cond: 'Saira Condensed', 'Arial Narrow', sans-serif; }
+    button, input { font-family: inherit; }
+    button { color: inherit; -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 3px; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .rojo { --sc: var(--red); --sct: var(--red-text); }
+    .azul { --sc: var(--blue); --sct: var(--blue-text); }
+
+    /* ---- Estructura ---- */
+    .pw-root { max-width: 1280px; min-height: 100vh; margin: 0 auto; padding: 0 max(14px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+    .pw-header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: calc(14px + env(safe-area-inset-top)) 0 12px; }
+    .pw-brand { margin-right: auto; min-width: 0; }
+    .pw-flag { display: flex; width: 56px; height: 7px; border: 1px solid var(--line-strong); margin-bottom: 7px; }
+    .pw-flag span { flex: 1; }
+    .pw-flag span:nth-child(even) { background: var(--text); }
+    .pw-h1 { font-family: var(--cond); font-weight: 700; font-size: 30px; letter-spacing: 5px; margin: 0; line-height: 1; }
+    .pw-sub { color: var(--text-3); font-size: 12px; margin: 5px 0 0; }
+    .pw-actions { display: flex; gap: 8px; }
+    .pw-tabs { order: 3; width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+    .pw-tab { border: 0; background: transparent; border-radius: 7px; padding: 7px 4px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--text-2); transition: background .15s, color .15s; }
+    .pw-tab:hover { background: var(--hover); color: var(--text); }
+    .pw-tab[aria-selected="true"] { background: var(--accent); color: var(--on-accent); }
+    .pw-tab b { font-family: var(--cond); font-size: 16px; font-weight: 700; letter-spacing: .5px; white-space: nowrap; }
+    .pw-tab small { font-size: 10.5px; opacity: .75; white-space: nowrap; }
+
+    /* ---- Botones ---- */
+    .pw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 36px; padding: 0 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--text-2); font-size: 13px; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: background .15s, border-color .15s, color .15s; }
+    .pw-btn:hover { background: var(--hover); border-color: var(--line-strong); color: var(--text); }
+    .pw-btn.primary, .pw-btn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .pw-btn.tall { height: 42px; font-weight: 600; color: var(--text); }
+    .pw-btn.tall.on { color: var(--on-accent); }
+    .pw-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; }
+    .pw-btn.on .pw-badge { background: var(--on-accent); color: var(--accent); }
+    .pw-link { background: none; border: 0; padding: 4px 0; color: var(--accent); font-size: 12.5px; cursor: pointer; }
+    .pw-link.muted { color: var(--text-3); }
+    .pw-link:hover { text-decoration: underline; }
+    .pw-led { width: 8px; height: 8px; border-radius: 50%; background: var(--text-2); flex-shrink: 0; }
+    .pw-led.busy { background: var(--accent); animation: pw-pulse 1s ease-in-out infinite; }
+    .pw-led.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }
+    @keyframes pw-pulse { 50% { opacity: .3; } }
+
+    /* ---- Lista ---- */
+    .pw-toolbar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 2px 0 8px; }
+    .pw-searchrow { display: flex; gap: 8px; }
+    .pw-search { position: relative; flex: 1; min-width: 0; }
+    .pw-search > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    .pw-search input { width: 100%; height: 42px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--text); padding: 0 38px; font-size: 16px; }
+    .pw-search input::placeholder { color: var(--muted); }
+    .pw-search input:focus { outline: none; border-color: var(--accent); }
+    .pw-search .aside { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); }
+    .pw-search .clear { width: 32px; height: 32px; border: 0; border-radius: 6px; background: none; color: var(--text-3); font-size: 18px; line-height: 1; cursor: pointer; }
+    .pw-search .clear:hover { background: var(--hover); color: var(--text); }
+    .pw-kbd { display: none; font: 600 11px/1 'IBM Plex Sans', sans-serif; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 4px; padding: 3px 6px; margin-right: 6px; }
+    .pw-status { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; min-height: 26px; }
+    .pw-count { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pw-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--sc); flex-shrink: 0; }
+    .pw-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text); font-size: 12px; white-space: nowrap; cursor: pointer; }
+    .pw-pill:hover { background: var(--hover); }
+    .pw-pill .x { color: var(--muted); font-size: 14px; line-height: 1; }
+    .pw-pill.rojo, .pw-pill.azul { border-color: var(--sc); color: var(--sct); }
+    .pw-pill.star { color: var(--text-2); }
+    .pw-pill.star.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .pw-panel { scroll-margin-top: 110px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 12px 2px; margin-bottom: 10px; }
+    .pw-glabel { font-family: var(--cond); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+    .pw-setupline { display: flex; align-items: center; gap: 4px 12px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+    .pw-setupline > span { display: inline-flex; align-items: center; gap: 5px; }
+    .pw-setupline .pw-link { margin-left: auto; }
+    .pw-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pw-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text-2); font-size: 13px; white-space: nowrap; cursor: pointer; transition: background .12s, color .12s; }
+    .pw-chip:hover { background: var(--hover); color: var(--text); }
+    .pw-chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+    .pw-chip.on.rojo, .pw-chip.on.azul { background: var(--sc); border-color: var(--sc); color: #fff; }
+    .pw-chip.on .pw-swatch { background: #fff; }
+    .pw-rows { display: flex; flex-direction: column; gap: 6px; }
+    .pw-group { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--cond); font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin: 14px 2px 2px; }
+    .pw-group:first-child { margin-top: 4px; }
+    .pw-group span { color: var(--muted); font-weight: 500; letter-spacing: 1px; }
+    .pw-row { width: 100%; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: pointer; color: var(--text); text-align: left; transition: background .12s, border-color .12s; }
+    .pw-row:hover { background: var(--hover); border-color: var(--line-strong); }
+    .pw-row.sel { background: var(--hover); border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+    .pw-row .body { flex: 1; min-width: 0; }
+    .pw-row .name { display: block; font-size: 15px; font-weight: 500; line-height: 1.3; }
+    .pw-row .meta { display: block; font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .pw-row .pw-swatch { width: 9px; height: 9px; }
+    .pw-tag { font-family: var(--cond); font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 6px; white-space: nowrap; flex-shrink: 0; }
+    .pw-none { color: var(--text-3); padding: 28px 12px; text-align: center; font-size: 14px; line-height: 1.6; }
+    .pw-footer { margin-top: 24px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .pw-footer .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+    .pw-footer .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+    /* ---- Ficha ---- */
+    .pw-detail-inner { max-width: 780px; }
+    .pw-back { display: inline-block; font-size: 13.5px; padding: 6px 0 10px; }
+    .pw-eyebrow { font-family: var(--cond); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+    .pw-title { font-family: var(--cond); font-size: 32px; font-weight: 700; line-height: 1.05; margin: 2px 0 8px; }
+    .pw-desc { color: var(--text-2); font-size: 14px; line-height: 1.55; margin: 0; }
+    .pw-desc.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .pw-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0 10px; }
+    .pw-tile { display: flex; align-items: center; gap: 12px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+    .pw-tile .ico { width: 42px; flex-shrink: 0; display: flex; justify-content: center; color: var(--accent); }
+    .pw-tile .txt { min-width: 0; }
+    .pw-tile .pw-glabel { margin-bottom: 2px; font-size: 11px; }
+    .pw-tile .val { font-family: var(--cond); font-size: 21px; font-weight: 700; line-height: 1.1; }
+    .pw-tile .hint { font-size: 12px; color: var(--text-3); margin-top: 3px; line-height: 1.35; }
+    .pw-tile.rojo .val, .pw-tile.azul .val { color: var(--sct); }
+    .pw-tile.rojo, .pw-tile.azul { box-shadow: inset 3px 0 0 var(--sc); }
+    .pw-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px; }
+    .pw-card > .pw-glabel { letter-spacing: 3px; margin-bottom: 8px; }
+    .pw-maintxt { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+    .pw-subtxt { font-size: 13.5px; color: var(--text-sub); line-height: 1.55; }
+    .pw-wheels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; max-width: 440px; margin-bottom: 10px; }
+    .pw-wheel { text-align: center; padding: 8px 2px 6px; border: 1px solid transparent; border-radius: 8px; font-size: 10.5px; color: var(--text-3); opacity: .45; }
+    .pw-wheel.on { opacity: 1; background: var(--hover); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .pw-dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 14px; margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; }
+    .pw-dl dt { font-family: var(--cond); font-size: 12.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-3); padding-top: 1px; }
+    .pw-dl dd { margin: 0; color: var(--text-sub); }
+    .pw-brakehead { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .pw-brakehead .pw-glabel { letter-spacing: 3px; margin-bottom: 2px; }
+    .pw-brakehead .pw-maintxt { color: var(--sct); margin: 0; }
+    .pw-gauges { display: flex; gap: 18px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+    .pw-kgrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 10px; font-size: 13px; color: var(--text-3); }
+    .pw-kgrow strong { color: var(--accent); font-weight: 600; }
+    .pw-input { width: 84px; height: 38px; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text); padding: 0 10px; font-size: 16px; }
+    .pw-input:focus { outline: none; border-color: var(--accent); }
+    .pw-note { font-size: 13.5px; color: var(--text-sub); line-height: 1.55; padding-left: 12px; border-left: 2px solid var(--accent); margin-bottom: 8px; }
+    .pw-note:last-child { margin-bottom: 0; }
+    .pw-empty { display: none; }
+
+    /* ---- Ventanas ---- */
+    .pw-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--overlay); animation: pw-fade .15s ease-out; }
+    .pw-modal { width: 100%; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; animation: pw-rise .18s ease-out; }
+    .pw-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 10px 0 18px; }
+    .pw-modal-head h3 { font-family: var(--cond); font-size: 15px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text-2); margin: 0; }
+    .pw-modal-head button { width: 34px; height: 34px; border: 0; border-radius: 6px; background: none; color: var(--text-3); font-size: 20px; line-height: 1; cursor: pointer; }
+    .pw-modal-head button:hover { background: var(--hover); color: var(--text); }
+    .pw-modal-body { padding: 8px 18px 16px; overflow-y: auto; }
+    .pw-modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--line); }
+    .pw-help { font-size: 13px; color: var(--text-3); line-height: 1.5; margin: 0 0 14px; }
+    .pw-field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13.5px; color: var(--text-2); }
+    .pw-field > label, .pw-field > .lbl { width: 108px; }
+    .pw-field .unit { font-size: 12.5px; color: var(--text-3); }
+    .pw-code { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .pw-code code { font: 700 22px/1 ui-monospace, 'Cascadia Mono', Menlo, monospace; letter-spacing: 3px; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+    .pw-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+    .pw-theme { display: flex; flex-direction: column; align-items: stretch; gap: 6px; background: none; border: 2px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; text-align: left; font-size: 12px; color: var(--text-2); }
+    .pw-theme:hover { border-color: var(--line-strong); }
+    .pw-theme[aria-checked="true"] { border-color: var(--accent); color: var(--text); font-weight: 600; }
+    .pw-theme .prev { position: relative; display: block; height: 44px; border-radius: 4px; overflow: hidden; }
+    .pw-theme .prev i { position: absolute; border-radius: 4px; }
+    @keyframes pw-fade { from { opacity: 0; } }
+    @keyframes pw-rise { from { opacity: 0; transform: translateY(8px); } }
+
+    /* ---- Móvil: lista o ficha, nunca las dos ---- */
+    @media (max-width: 999.98px) {
+      .pw-main.has-sel .pw-list, .pw-main:not(.has-sel) .pw-detail { display: none; }
+    }
+    @media (max-width: 560px) {
+      .pw-summary { grid-template-columns: 1fr; gap: 8px; }
+      .pw-hide-sm { display: none; }
+      .pw-title { font-size: 28px; }
+    }
+
+    /* ---- Escritorio: lista a la izquierda, ficha a la derecha, cada una con su scroll ---- */
+    @media (min-width: 1000px) {
+      .pw-root { height: 100vh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
+      .pw-header { flex-wrap: nowrap; padding-bottom: 14px; }
+      .pw-tabs { order: 0; width: auto; grid-template-columns: repeat(4, 124px); }
+      .pw-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 20px; }
+      .pw-list, .pw-detail { overflow-y: auto; min-height: 0; padding-bottom: 28px; }
+      .pw-list { padding-right: 6px; }
+      .pw-back { display: none; }
+      .pw-kbd { display: inline-block; }
+      .pw-panel { scroll-margin-top: 100px; }
+      .pw-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 320px; text-align: center; color: var(--text-3); font-size: 14px; line-height: 1.6; border: 1px dashed var(--line-strong); border-radius: var(--r); padding: 24px; }
+      .pw-empty .pw-flag { width: 96px; height: 12px; margin-bottom: 16px; }
+      .pw-empty .pw-title { color: var(--text); margin-bottom: 6px; }
+      .pw-empty p { margin: 0; max-width: 340px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   </style>
   <script>
     // Temas: cada uno define la paleta completa como variables CSS. El primero es el default.
@@ -160,7 +347,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useMemo, useEffect, useRef } = React;
+    const { useState, useMemo, useEffect, useLayoutEffect, useRef } = React;
 
     // ---- Firebase ----
     // Config se carga en runtime desde /api/config (las keys viven en variables de entorno de Vercel)
@@ -983,7 +1170,7 @@
               <div style={{ position: "absolute", left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%`, top: 0, bottom: 0, backgroundColor: color, borderRadius: 4 }} />
             )}
             {[...(hi > lo ? [lo, hi] : [lo])].map((i) => (
-              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", backgroundColor: color, transform: anchor(i), boxShadow: "0 0 0 2px var(--bg)" }} />
+              <span key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: -3, width: 14, height: 14, borderRadius: "50%", backgroundColor: color, transform: anchor(i), boxShadow: "0 0 0 2px var(--surface)" }} />
             ))}
           </div>
           <div style={{ position: "relative", height: 14, marginTop: 6 }}>
@@ -997,7 +1184,7 @@
       );
     }
 
-    function Spring({ color, dura }) {
+    function Spring({ color, dura, size = 1 }) {
       const n = dura ? 7 : 5;
       const h = 120, pad = 14;
       const step = (h - pad * 2) / n;
@@ -1008,7 +1195,7 @@
         d += ` Q ${i % 2 ? 6 : 54} ${y1} 30 ${y2}`;
       }
       return (
-        <svg width="60" height={h} viewBox={`0 0 60 ${h}`} aria-hidden="true">
+        <svg width={60 * size} height={h * size} viewBox={`0 0 60 ${h}`} aria-hidden="true" style={{ flexShrink: 0 }}>
           <rect x="14" y="2" width="32" height="7" rx="2" style={{ fill: "var(--line-strong)" }} />
           <rect x="14" y={h - 9} width="32" height="7" rx="2" style={{ fill: "var(--line-strong)" }} />
           <path d={d} fill="none" stroke={color} strokeWidth={dura ? 7 : 5} strokeLinecap="round" />
@@ -1066,23 +1253,131 @@
 
     const WHEEL_LABELS = { redondo: "Circular", gt3: "GT", neo: "GT Neo", formula: "Formula", podium: "Flat Bottom" };
 
+    // Simuladores/pestañas: única fuente de nombre, versión y catálogo
+    // (la usan las pestañas, el pie de la lista y el historial del navegador).
+    const SIMS = [
+      { k: "ir", name: "iRacing", v: "2026 S4", data: IRACING },
+      { k: "ac", name: "AC EVO", v: "v0.9", data: ACEVO },
+      { k: "acr", name: "AC Rally", v: "v0.6", data: ACRALLY },
+      { k: "ams", name: "AMS2", v: "v1.6.9", data: AMS2 },
+    ];
+
+    // Versiones cortas del cambio: etiqueta de la fila y titular de la ficha
+    const TRANS_TAGS = { L: "Levas", A: "Auto", S: "Secuencial", H: "En H", HD: "H dogleg", N: "Directo" };
+    const SHIFT_SHORT = {
+      L: ["Levas", "Palanca aparcada"],
+      A: ["Automático", "Levas opcionales"],
+      S: ["Palanca secuencial", "Sin embrague en marcha"],
+      H: ["Palanca en H", "Con embrague VRS"],
+      HD: ["Palanca en H · dogleg", "Con embrague VRS"],
+      N: ["Sin cambios", "Ni palanca ni levas"],
+    };
+
+    function ShiftIcon({ t }) {
+      return (
+        <svg width="40" height="40" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {(t === "L" || t === "A") && (
+            <g>
+              <path d="M40 30 L22 24 Q12 50 22 76 L40 70 Z" />
+              <path d="M60 30 L78 24 Q88 50 78 76 L60 70 Z" />
+            </g>
+          )}
+          {t === "S" && (
+            <g>
+              <path d="M50 30 V70 M38 22 L50 10 L62 22 M38 78 L50 90 L62 78" />
+              <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
+            </g>
+          )}
+          {(t === "H" || t === "HD") && (
+            <g>
+              <path d="M24 22 V78 M50 22 V78 M76 22 V78 M24 50 H76" />
+              <circle cx="24" cy={t === "HD" ? 78 : 22} r="9" fill="currentColor" stroke="none" />
+            </g>
+          )}
+          {t === "N" && (
+            <g>
+              <circle cx="50" cy="50" r="32" />
+              <path d="M36 50 H64" />
+            </g>
+          )}
+        </svg>
+      );
+    }
+
+    function Ico({ n }) {
+      const d = {
+        search: "M11 4a7 7 0 1 0 0 14a7 7 0 0 0 0-14z M20 20l-4-4",
+        filtros: "M4 7h10 M18 7h2 M4 17h2 M10 17h10 M16 5v4 M8 15v4",
+        tema: "M12 3a9 9 0 1 0 0 18z M12 3a9 9 0 0 1 0 18",
+      }[n];
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={d} />
+        </svg>
+      );
+    }
+
+    // Ventana modal: se cierra con Escape, con la × o tocando fuera
+    function Modal({ title, onClose, width = 380, footer, children }) {
+      const closeRef = useRef(onClose);
+      closeRef.current = onClose;
+      useEffect(() => {
+        const onKey = (e) => { if (e.key === "Escape") closeRef.current(); };
+        document.addEventListener("keydown", onKey);
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+          document.removeEventListener("keydown", onKey);
+          document.body.style.overflow = prev;
+        };
+      }, []);
+      return (
+        <div className="pw-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
+          <div className="pw-modal" style={{ maxWidth: width }} onClick={(e) => e.stopPropagation()}>
+            <div className="pw-modal-head">
+              <h3>{title}</h3>
+              <button onClick={onClose} aria-label="Cerrar">×</button>
+            </div>
+            <div className="pw-modal-body">{children}</div>
+            {footer && <div className="pw-modal-foot">{footer}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // El carro abierto vive en el historial del navegador: "atrás" vuelve a la
+    // lista (en el celular, en vez de salir de la app) y recargar lo conserva.
+    function carroDelHistorial() {
+      try {
+        const st = history.state;
+        if (!st || st.pw !== "car") return null;
+        const s = SIMS.find((z) => z.k === st.sim);
+        const car = s && s.data.find((z) => z.n === st.n);
+        return car ? { sim: st.sim, car } : null;
+      } catch { return null; }
+    }
+
     function App() {
-      const [sim, setSim] = useState("ir");
+      const inicial = useRef(carroDelHistorial()).current;
+      const [sim, setSim] = useState(inicial ? inicial.sim : "ir");
       const [cat, setCat] = useState("todas");
       const [trans, setTrans] = useState("todas");
       const [spring, setSpring] = useState("todas");
       const [tie, setTie] = useState("todas");
       const [pre, setPre] = useState("todas");
+      const [orden, setOrden] = useState("az");
       const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
       const [q, setQ] = useState("");
-      const [sel, setSel] = useState(null);
+      const [sel, setSel] = useState(inicial ? inicial.car : null);
+      const [descAbierta, setDescAbierta] = useState(false);
       const [syncCode, setSyncCode] = useState(() => {
         let c = localStorage.getItem("pitwall_sync_code");
         if (!c) { c = genSyncCode(); localStorage.setItem("pitwall_sync_code", c); }
         return c;
       });
       const [codeInput, setCodeInput] = useState("");
-      const [showCodeInput, setShowCodeInput] = useState(false);
+      const [syncModal, setSyncModal] = useState(false);
+      const [copiado, setCopiado] = useState(false);
       const [syncing, setSyncing] = useState(false);
       const [firebaseReady, setFirebaseReady] = useState(false);
 
@@ -1124,6 +1419,11 @@
       localRef.current = { customKg, tieMm, preMm, miSetup };
       const syncCodeRef = useRef(syncCode);
       syncCodeRef.current = syncCode;
+      const searchRef = useRef(null);
+      const listRef = useRef(null);
+      const detailRef = useRef(null);
+      const panelRef = useRef(null);
+      const listScroll = useRef(0);
 
       // Reemplaza el estado local completo (solo las secciones que cambiaron)
       const aplicarLocal = (next) => {
@@ -1218,13 +1518,78 @@
         };
       }, []);
 
+      // ---- Navegación lista ↔ ficha ----
+      const selectCar = (x) => {
+        if (!sel) listScroll.current = window.scrollY;
+        const st = { pw: "car", sim, n: x.n };
+        try { if (sel) history.replaceState(st, ""); else history.pushState(st, ""); } catch {}
+        setSel(x);
+      };
+      const closeCar = () => {
+        if (history.state && history.state.pw === "car") history.back();
+        else setSel(null);
+      };
+      useEffect(() => {
+        try { history.scrollRestoration = "manual"; } catch {}
+        const onPop = () => {
+          const h = carroDelHistorial();
+          if (h) { setSim(h.sim); setSel(h.car); } else setSel(null);
+        };
+        window.addEventListener("popstate", onPop);
+        return () => window.removeEventListener("popstate", onPop);
+      }, []);
+      // Al abrir una ficha se empieza arriba; al volver, la lista queda donde estaba
+      useLayoutEffect(() => {
+        setDescAbierta(false);
+        if (sel) {
+          window.scrollTo(0, 0);
+          if (detailRef.current) detailRef.current.scrollTop = 0;
+        } else {
+          window.scrollTo(0, listScroll.current);
+        }
+      }, [sel]);
+
+      // "/" lleva al buscador desde cualquier parte
+      useEffect(() => {
+        const onKey = (e) => {
+          if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+          if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+          const el = searchRef.current;
+          if (!el || !el.offsetParent) return;
+          e.preventDefault();
+          el.focus();
+          el.select();
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+      }, []);
+
+      useEffect(() => {
+        if (filtrosAbiertos && panelRef.current) panelRef.current.scrollIntoView({ block: "nearest" });
+      }, [filtrosAbiertos]);
+
+      const changeSim = (k) => {
+        if (k === sim) return;
+        if (sel) closeCar();
+        listScroll.current = 0;
+        setSim(k); setCat("todas"); setTrans("todas"); setSpring("todas"); setTie("todas"); setPre("todas");
+        if (listRef.current) listRef.current.scrollTop = 0;
+      };
+
       const applyCode = () => {
         const c = codeInput.trim().toUpperCase();
         if (c.length < 4) return;
         localStorage.setItem("pitwall_sync_code", c);
         setSyncCode(c);
         setCodeInput("");
-        setShowCodeInput(false);
+      };
+      const copiarCodigo = () => {
+        try {
+          navigator.clipboard.writeText(syncCode).then(() => {
+            setCopiado(true);
+            setTimeout(() => setCopiado(false), 1600);
+          }, () => {});
+        } catch {}
       };
 
       const openTieModal = () => {
@@ -1294,7 +1659,8 @@
         setPreModal(false);
       };
 
-      const data = sim === "ir" ? IRACING : sim === "ac" ? ACEVO : sim === "acr" ? ACRALLY : AMS2;
+      const simActual = SIMS.find((s) => s.k === sim);
+      const data = simActual.data;
 
       const cats = useMemo(() => {
         const present = [...new Set(data.map((x) => x.cat))];
@@ -1350,30 +1716,30 @@
       const GRUPOS_FILTRO = [
         {
           key: "cat", label: "Categoría", value: cat, set: setCat,
-          opts: [{ v: "todas", txt: "Todas las categorías" },
+          opts: [{ v: "todas", txt: "Todas" },
                  ...cats.map((k) => ({ v: k, txt: CATS[k].label }))],
         },
         {
           key: "trans", label: "Cambio", value: trans, set: setTrans,
-          opts: [{ v: "todas", txt: "Cualquier cambio" }, { v: "levas", txt: "Levas" },
+          opts: [{ v: "todas", txt: "Cualquiera" }, { v: "levas", txt: "Levas" },
                  { v: "sec", txt: "Secuencial palanca" }, { v: "h", txt: "Palanca en H" },
                  { v: "sin", txt: "Sin cambios" }],
         },
         {
           key: "spring", label: "Resorte", value: spring, set: setSpring,
-          opts: [{ v: "todas", txt: "Cualquier resorte" },
-                 { v: "rojo", txt: "Resorte rojo (duro)", short: "Resorte rojo", color: "var(--red)" },
-                 { v: "azul", txt: "Resorte azul (blando)", short: "Resorte azul", color: "var(--blue)" }],
+          opts: [{ v: "todas", txt: "Cualquiera" },
+                 { v: "rojo", txt: "Rojo (duro)", short: "Resorte rojo", color: "rojo" },
+                 { v: "azul", txt: "Azul (blando)", short: "Resorte azul", color: "azul" }],
         },
         {
           key: "tie", label: "Tie-rod", value: tie, set: setTie,
-          opts: [{ v: "todas", txt: "Cualquier tie-rod" },
-                 ...TIE_STOPS.map((t) => ({ v: t, txt: `Tie-rod ${t.toLowerCase()}` }))],
+          opts: [{ v: "todas", txt: "Cualquiera" },
+                 ...TIE_STOPS.map((t) => ({ v: t, txt: t, short: `Tie-rod ${t.toLowerCase()}` }))],
         },
         {
           key: "pre", label: "Preload", value: pre, set: setPre,
-          opts: [{ v: "todas", txt: "Cualquier preload" },
-                 ...PRE_STOPS.map((p) => ({ v: p, txt: `Preload ${p.toLowerCase()}` }))],
+          opts: [{ v: "todas", txt: "Cualquiera" },
+                 ...PRE_STOPS.map((p) => ({ v: p, txt: p, short: `Preload ${p.toLowerCase()}` }))],
         },
       ];
       const filtrosActivos = GRUPOS_FILTRO.filter((g) => g.value !== "todas");
@@ -1383,585 +1749,551 @@
         setMiSetupOn(false);
       };
       const resumenSetup = [
-        miSetup.spring && { txt: `Resorte ${miSetup.spring}`, color: miSetup.spring === "rojo" ? "var(--red)" : "var(--blue)" },
+        miSetup.spring && { txt: `Resorte ${miSetup.spring}`, color: miSetup.spring },
         miSetup.tie && { txt: `Tie-rod ${miSetup.tie.toLowerCase()}` },
         miSetup.pre && { txt: `Preload ${miSetup.pre.toLowerCase()}` },
       ].filter(Boolean);
 
-      return (
-        <div style={S.root}>
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-            * { box-sizing: border-box; }
-            ::-webkit-scrollbar { height: 6px; width: 6px; }
-            ::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 3px; }
-            .chipbar { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-            /* En pantallas anchas no hay scroll horizontal cómodo con mouse: que los chips bajen de fila */
-            @media (min-width: 620px) {
-              .chipbar { flex-wrap: wrap; overflow-x: visible; padding-bottom: 0; }
-            }
-            .row:hover { background:var(--hover) !important; }
-            @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-            input:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-          `}</style>
+      const syncEstado = !firebaseReady ? "off" : syncing ? "busy" : "ok";
+      const SYNC_TXT = {
+        off: "Sin conexión con la nube: tus valores se guardan solo en este dispositivo.",
+        busy: "Sincronizando…",
+        ok: "Sincronizado. Tus valores se guardan en la nube con este código.",
+      };
 
-          <header style={S.header}>
-            <div style={S.flag} aria-hidden="true">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span key={i} style={{ ...S.flagSq, backgroundColor: i % 2 ? "var(--text)" : "transparent" }} />
+      const renderRow = (x, conCat) => {
+        const r = recomendar(x);
+        return (
+          <button key={x.n} role="listitem" onClick={() => selectCar(x)}
+            className={"pw-row" + (sel === x ? " sel" : "")} aria-current={sel === x ? "true" : undefined}>
+            <span className={"pw-swatch " + r.springKey} aria-hidden="true" />
+            <span className="body">
+              <span className="name">{x.n}</span>
+              <span className="meta">{conCat ? `${CATS[x.cat].label} · ` : ""}{x.y} · {WHEEL_LABELS[r.wheelKey]}</span>
+            </span>
+            <span className="pw-tag">{TRANS_TAGS[x.t]}</span>
+          </button>
+        );
+      };
+
+      // Datos de la ficha (solo con un carro abierto)
+      // Un valor de kg guardado por simulador y por perfil de freno: el mismo
+      // perfil comparte calibración dentro de un sim, pero nunca entre sims
+      // ni entre perfiles distintos.
+      const kgKey = rec ? `${sim}:${rec.brakeId}` : null;
+      const userKg = rec ? customKg[kgKey] : null;
+      const springColor = rec && (rec.springKey === "rojo" ? "var(--red)" : "var(--blue)");
+      const handleKgChange = (val) => {
+        const n = parseInt(val, 10);
+        setCustomKg(prev => {
+          const next = { ...prev };
+          if (!val || isNaN(n) || n <= 0) delete next[kgKey];
+          else next[kgKey] = Math.min(n, 300);
+          return next;
+        });
+      };
+      const kgEstado = (() => {
+        if (!userKg) return null;
+        const [lo, hi] = rec.kg.split("–").map(Number);
+        return userKg < lo ? "por debajo del rango" : userKg > hi ? "por encima del rango" : "dentro del rango";
+      })();
+      const gb = sel && sim === "ir" ? gearboxOf(sel) : null;
+
+      return (
+        <div className="pw-root">
+          <header className="pw-header">
+            <div className="pw-brand">
+              <div className="pw-flag" aria-hidden="true">
+                {Array.from({ length: 8 }).map((_, i) => <span key={i} />)}
+              </div>
+              <h1 className="pw-h1">PIT WALL</h1>
+              <p className="pw-sub">
+                Tu rig, carro a carro<span className="pw-hide-sm"> · VRS Pro · Fanatec DD · 5 volantes · palanca H/secuencial</span>
+              </p>
+            </div>
+
+            <div className="pw-tabs" role="tablist" aria-label="Simulador">
+              {SIMS.map((s) => (
+                <button key={s.k} role="tab" aria-selected={sim === s.k} onClick={() => changeSim(s.k)} className="pw-tab">
+                  <b>{s.name}</b>
+                  <small>{s.v}</small>
+                </button>
               ))}
             </div>
-            <h1 style={S.h1}>PIT WALL</h1>
-            <p style={S.sub}>
-              Tu rig, carro a carro · VRS Pro · Fanatec DD · 5 volantes · palanca H/secuencial
-            </p>
+
+            <div className="pw-actions">
+              <button className="pw-btn" onClick={() => setSyncModal(true)} title={SYNC_TXT[syncEstado]}>
+                <span className={"pw-led " + syncEstado} aria-hidden="true" />
+                Sync
+              </button>
+              <button className="pw-btn" onClick={() => setThemeOpen(true)}>
+                <Ico n="tema" />
+                Tema
+              </button>
+            </div>
           </header>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 2px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, color: syncing ? "var(--accent)" : "var(--dim)", minWidth: 60 }}>
-              {syncing ? "sincronizando…" : "⊙ sync"}
-            </span>
-            {!showCodeInput ? (
-              <>
-                <code style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", letterSpacing: 2, backgroundColor: "var(--surface)", padding: "2px 10px", borderRadius: 4, borderWidth: 1, borderStyle: "solid", ...bc("var(--line)") }}>
-                  {syncCode}
-                </code>
-                <button onClick={() => navigator.clipboard.writeText(syncCode)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>copiar</button>
-                <button onClick={() => setShowCodeInput(true)} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cambiar</button>
-              </>
-            ) : (
-              <>
-                <input
-                  value={codeInput}
-                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
-                  onKeyDown={e => e.key === "Enter" && applyCode()}
-                  placeholder="ej. XKPQ-847"
-                  maxLength={9}
-                  style={{ width: 110, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--accent)"), borderRadius: 4, color: "var(--text)", padding: "3px 8px", fontSize: 12, fontFamily: "inherit", letterSpacing: 1 }}
-                  autoFocus
-                />
-                <button onClick={applyCode} style={{ ...S.chip, padding: "2px 10px", fontSize: 11, backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>usar</button>
-                <button onClick={() => { setShowCodeInput(false); setCodeInput(""); }} style={{ ...S.chip, padding: "2px 10px", fontSize: 11 }}>cancelar</button>
-              </>
-            )}
-            <button
-              onClick={() => setThemeOpen(o => !o)}
-              aria-expanded={themeOpen}
-              style={{ ...S.chip, padding: "2px 10px", fontSize: 11, marginLeft: "auto", ...(themeOpen ? S.chipOn : {}) }}
-            >
-              ◐ tema
-            </button>
-          </div>
-
-          {themeOpen && (
-            <div style={S.themePanel} role="radiogroup" aria-label="Tema">
-              {window.PW_THEMES.map((th) => {
-                const on = theme === th.key;
-                return (
-                  <button key={th.key} role="radio" aria-checked={on} onClick={() => setTheme(th.key)}
-                    style={{ ...S.themeSwatch, ...bc(on ? "var(--accent)" : "var(--line)") }}>
-                    <span aria-hidden="true" style={{ ...S.themePreview, backgroundColor: th.t.bg, ...bc(th.t.line) }}>
-                      <span style={{ position: "absolute", left: 6, right: 6, top: 6, height: 12, borderRadius: 3, backgroundColor: th.t.surface, borderWidth: 1, borderStyle: "solid", ...bc(th.t.line) }} />
-                      <span style={{ position: "absolute", left: 6, bottom: 6, width: "42%", height: 7, borderRadius: 4, backgroundColor: th.t.accent }} />
-                      <span style={{ position: "absolute", right: 6, bottom: 6, width: "28%", height: 7, borderRadius: 4, backgroundColor: th.t.text }} />
+          <main className={"pw-main" + (sel ? " has-sel" : "")}>
+            <div className="pw-list" ref={listRef}>
+              <div className="pw-toolbar">
+                <div className="pw-searchrow">
+                  <div className="pw-search">
+                    <Ico n="search" />
+                    <input
+                      ref={searchRef}
+                      type="search"
+                      enterKeyHint="search"
+                      autoComplete="off"
+                      placeholder={`Buscar entre ${data.length} carros…`}
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Escape") { setQ(""); e.target.blur(); } }}
+                      aria-label="Buscar carro"
+                    />
+                    <span className="aside">
+                      {q
+                        ? <button className="clear" onClick={() => { setQ(""); searchRef.current.focus(); }} aria-label="Borrar búsqueda">×</button>
+                        : <span className="pw-kbd" aria-hidden="true">/</span>}
                     </span>
-                    <span style={{ fontSize: 12, fontWeight: on ? 600 : 400, color: on ? "var(--text)" : "var(--text-2)" }}>{th.name}</span>
+                  </div>
+                  <button
+                    onClick={() => setFiltrosAbiertos((o) => !o)}
+                    aria-expanded={filtrosAbiertos}
+                    aria-controls="panel-filtros"
+                    className={"pw-btn tall" + (filtrosAbiertos ? " on" : "")}
+                  >
+                    <Ico n="filtros" />
+                    Filtros
+                    {totalFiltros > 0 && <span className="pw-badge">{totalFiltros}</span>}
                   </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div style={S.tabs} role="tablist">
-            {[["ir", "iRacing", "2026 S4"], ["ac", "AC EVO", "v0.9"], ["acr", "AC Rally", "v0.6"], ["ams", "AMS2", "v1.6.9"]].map(([k, t, v]) => (
-              <button
-                key={k}
-                role="tab"
-                aria-selected={sim === k}
-                onClick={() => { setSim(k); setCat("todas"); setTrans("todas"); setSpring("todas"); setTie("todas"); setPre("todas"); setSel(null); }}
-                style={{ ...S.tab, ...(sim === k ? S.tabOn : {}) }}
-              >
-                <span style={{ fontFamily: "'Saira Condensed'", fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>{t}</span>
-                <span style={{ fontSize: 11, color: sim === k ? "var(--on-accent)" : "var(--text-3)" }}>{v}</span>
-              </button>
-            ))}
-          </div>
-
-          {sel && rec && (
-            <section style={S.card} aria-live="polite">
-              <button onClick={() => setSel(null)} style={S.back}>← volver a la lista</button>
-              <div style={S.cardCat}>{CATS[sel.cat].label} · {sel.y}</div>
-              <h2 style={S.cardTitle}>{sel.n}</h2>
-              <p style={S.cardInfo}>{sel.i}</p>
-
-              <div style={S.block}>
-                <div style={S.blockLabel}>VOLANTE</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 8, alignItems: "start", maxWidth: 400, marginBottom: 8 }}>
-                  {["redondo", "gt3", "neo", "formula", "podium"].map((w) => (
-                    <div key={w} style={{ textAlign: "center", opacity: rec.wheelKey === w ? 1 : 0.45 }}>
-                      <WheelIcon tipo={w} activo={rec.wheelKey === w} />
-                      <div style={{ fontSize: 10, color: rec.wheelKey === w ? "var(--accent)" : "var(--text-3)", marginTop: 2 }}>
-                        {WHEEL_LABELS[w]}
-                      </div>
-                    </div>
-                  ))}
                 </div>
-                <div style={S.blockMain}>{rec.wheel.nombre}</div>
-                <div style={S.blockSub}>{rec.wheel.porque}</div>
-              </div>
 
-              <div style={S.block}>
-                <div style={S.blockLabel}>CAMBIO</div>
-                <div style={S.blockMain}>{rec.shift.txt}</div>
-                {rec.shift.sub && <div style={S.blockSub}>{rec.shift.sub}</div>}
-              </div>
-
-              {sim === "ir" && (() => {
-                const gb = gearboxOf(sel);
-                return (
-                  <div style={S.block}>
-                    <div style={S.blockLabel}>CAJA DE CAMBIOS · iRACING</div>
-                    <div style={S.blockMain}>{gb.t}</div>
-                    <div style={{ ...S.blockSub, marginTop: 4 }}>
-                      <strong style={{ color: "var(--text-2)" }}>Accionamiento:</strong> {gb.lever}
-                    </div>
-                    <div style={S.blockSub}>
-                      <strong style={{ color: "var(--text-2)" }}>Subir:</strong> {gb.up}
-                    </div>
-                    <div style={S.blockSub}>
-                      <strong style={{ color: "var(--text-2)" }}>Bajar:</strong> {gb.down}
-                    </div>
-                    {gb.extra && <div style={{ ...S.blockSub, marginTop: 4, fontStyle: "italic" }}>{gb.extra}</div>}
-                  </div>
-                );
-              })()}
-
-              {(() => {
-                // Un valor guardado por simulador y por perfil de freno:
-                // el mismo perfil comparte calibración dentro de un sim,
-                // pero nunca entre sims ni entre perfiles distintos.
-                const kgKey = `${sim}:${rec.brakeId}`;
-                const userKg = customKg[kgKey];
-                const springColor = rec.springKey === "rojo" ? "var(--red)" : "var(--blue)";
-                const handleKgChange = (val) => {
-                  const n = parseInt(val, 10);
-                  setCustomKg(prev => {
-                    const next = { ...prev };
-                    if (!val || isNaN(n) || n <= 0) delete next[kgKey];
-                    else next[kgKey] = Math.min(n, 300);
-                    return next;
-                  });
-                };
-                return (
-                  <div style={{ ...S.block, display: "flex", gap: 16, alignItems: "flex-start" }}>
-                    <Spring color={springColor} dura={rec.springKey === "rojo"} />
-                    <div style={{ flex: 1 }}>
-                      <div style={S.blockLabel}>FRENO VRS · {rec.brake.nombre.toUpperCase()}</div>
-                      <div style={{ ...S.blockMain, color: rec.springKey === "rojo" ? "var(--red-text)" : "var(--blue-text)" }}>
-                        {rec.spring.nombre}
-                      </div>
-                      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", margin: "10px 0 12px" }}>
-                        <MiniGauge
-                          title="TIE-ROD"
-                          stops={TIE_STOPS}
-                          range={TIE_LEVELS[rec.brake.tie]}
-                          color={springColor}
-                          values={[
-                            tieMm.corta ? `${tieMm.corta} mm` : null,
-                            `${TIE_STOCK_MM} mm`,
-                            tieMm.larga ? `${tieMm.larga} mm` : null,
-                          ]}
-                          onEdit={openTieModal}
-                        />
-                        <MiniGauge
-                          title="PRELOAD"
-                          stops={PRE_STOPS}
-                          range={PRE_LEVELS[rec.brake.pre]}
-                          color={springColor}
-                          values={PRE_STOPS.map((_, i) => {
-                            const [plo, phi] = PRE_LEVELS[rec.brake.pre];
-                            if (i < plo || i > phi) return undefined;
-                            const v = preMm[preKeyOf(rec, i)];
-                            return v ? `${v} mm` : null;
-                          })}
-                          onEdit={openPreModal}
-                        />
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 600, margin: "2px 0" }}>
-                        Rango sugerido: ~{rec.kg} kg
-                        {userKg && <span style={{ color: "var(--accent)", fontWeight: 700, marginLeft: 8 }}>· Tu valor: {userKg} kg</span>}
-                      </div>
-                      <PressureBar range={rec.kg} color={springColor} marker={userKg} />
-                      <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, color: "var(--text-3)" }}>Tu valor para este rango:</span>
-                        <input
-                          type="number" min="1" max="300"
-                          placeholder="kg"
-                          value={userKg || ""}
-                          onChange={e => handleKgChange(e.target.value)}
-                          style={{ width: 62, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "3px 7px", fontSize: 13, fontFamily: "inherit" }}
-                        />
-                        <span style={{ fontSize: 12, color: "var(--text-3)" }}>kg</span>
-                        {userKg && (
-                          <button onClick={() => handleKgChange("")} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
-                            limpiar
-                          </button>
-                        )}
-                      </div>
-                      <div style={{ ...S.blockSub, marginTop: 6 }}>{rec.brake.porque} Calibra el 100 % de freno en el software de VRS a esa fuerza con tu postura real de conducción.</div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {rec.notas.length > 0 && (
-                <div style={S.block}>
-                  <div style={S.blockLabel}>NOTAS DE BOXES</div>
-                  {rec.notas.map((nt, i) => (
-                    <div key={i} style={{ ...S.blockSub, marginBottom: 6, paddingLeft: 12, borderLeftWidth: 2, borderLeftStyle: "solid", borderLeftColor: "var(--accent)" }}>{nt}</div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {!sel && (
-            <>
-              <input
-                style={S.search}
-                placeholder={`Buscar entre ${data.length} carros…`}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                aria-label="Buscar carro"
-              />
-              <div style={S.setupBar}>
-                <span style={S.filterGroupLabel}>MI SETUP</span>
-                {setupDefinido ? (
-                  <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", alignItems: "center", flex: 1, minWidth: 0, fontSize: 12.5, color: "var(--text-2)" }}>
-                    {resumenSetup.map((r) => (
-                      <span key={r.txt} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                        {r.color && <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: r.color }} />}
-                        {r.txt}
-                      </span>
-                    ))}
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 12.5, color: "var(--muted)", flex: 1 }}>sin definir</span>
-                )}
-                <button onClick={openSetupModal} style={S.filterClear}>{setupDefinido ? "editar" : "configurar"}</button>
-                {setupDefinido && (
+                <div className="pw-status">
                   <button
                     onClick={toggleMiSetup}
                     aria-pressed={miSetupActivo}
-                    style={{ ...S.chip, padding: "3px 11px", fontSize: 12, ...(miSetupActivo ? S.chipTrans : {}) }}
+                    title={setupDefinido ? resumenSetup.map((r) => r.txt).join(" · ") : "Guarda lo que tienes montado en los pedales para filtrar con un toque"}
+                    className={"pw-pill star" + (miSetupActivo ? " on" : "")}
                   >
-                    ★ Filtrar por mi setup
+                    ★ Mi setup
                   </button>
-                )}
-              </div>
-              <div style={S.filterBar}>
-                <button
-                  onClick={() => setFiltrosAbiertos((o) => !o)}
-                  aria-expanded={filtrosAbiertos}
-                  aria-controls="panel-filtros"
-                  style={{ ...S.filterToggle, ...(filtrosAbiertos ? S.filterToggleOn : {}) }}
-                >
-                  <span aria-hidden="true" style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
-                    {[0, 1, 2].map((i) => (
-                      <span key={i} style={{ display: "block", width: 14, height: 2, borderRadius: 1, backgroundColor: "currentColor" }} />
-                    ))}
-                  </span>
-                  Filtros
-                  {totalFiltros > 0 && <span style={S.filterBadge}>{totalFiltros}</span>}
-                </button>
-
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", flex: 1, minWidth: 0 }}>
-                  {totalFiltros === 0 ? (
-                    <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{lista.length} carros · sin filtros</span>
-                  ) : (
-                    <>
-                    {miSetupActivo && (
+                  {filtrosActivos.map((g) => {
+                    const o = g.opts.find((x) => x.v === g.value) || {};
+                    return (
                       <button
-                        onClick={() => setMiSetupOn(false)}
-                        title="Quitar filtro de mi setup"
-                        style={{ ...S.filterPill, ...bc("var(--accent)"), color: "var(--accent)" }}
+                        key={g.key}
+                        onClick={() => g.set("todas")}
+                        title={`Quitar filtro de ${g.label.toLowerCase()}`}
+                        className={"pw-pill " + (o.color || "")}
                       >
-                        ★ Mi setup
-                        <span aria-hidden="true" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1 }}>×</span>
+                        {o.color && <span className="pw-swatch" />}
+                        {o.short || o.txt}
+                        <span className="x" aria-hidden="true">×</span>
                       </button>
-                    )}
-                    {filtrosActivos.map((g) => {
-                      const o = g.opts.find((x) => x.v === g.value) || {};
-                      return (
-                        <button
-                          key={g.key}
-                          onClick={() => g.set("todas")}
-                          title={`Quitar filtro de ${g.label.toLowerCase()}`}
-                          style={{ ...S.filterPill, ...(o.color ? { ...bc(o.color), color: o.color } : {}) }}
-                        >
-                          {o.color && <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: o.color, flexShrink: 0 }} />}
-                          {o.short || o.txt}
-                          <span aria-hidden="true" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1 }}>×</span>
-                        </button>
-                      );
-                    })}
-                    </>
-                  )}
+                    );
+                  })}
+                  {totalFiltros > 0 && <button onClick={limpiarFiltros} className="pw-link muted">limpiar</button>}
+                  <span className="pw-count">
+                    {lista.length === data.length ? `${data.length} carros` : `${lista.length} de ${data.length}`}
+                  </span>
                 </div>
-
-                {totalFiltros > 0 && (
-                  <button onClick={limpiarFiltros} style={S.filterClear}>limpiar</button>
-                )}
               </div>
 
               {filtrosAbiertos && (
-                <div id="panel-filtros" style={S.filterPanel}>
+                <div id="panel-filtros" className="pw-panel" ref={panelRef}>
+                  <div className="pw-glabel">Mi setup</div>
+                  <div className="pw-setupline">
+                    {setupDefinido ? resumenSetup.map((r) => (
+                      <span key={r.txt} className={r.color || ""}>
+                        {r.color && <i className="pw-swatch" />}
+                        {r.txt}
+                      </span>
+                    )) : (
+                      <span style={{ color: "var(--muted)" }}>Sin definir</span>
+                    )}
+                    <button onClick={openSetupModal} className="pw-link">{setupDefinido ? "editar" : "configurar"}</button>
+                  </div>
                   {GRUPOS_FILTRO.map((g) => (
-                    <div key={g.key} style={{ marginBottom: 12 }}>
-                      <div style={S.filterGroupLabel}>{g.label.toUpperCase()}</div>
-                      <div className="chipbar">
-                        {g.opts.map((o) => {
-                          const on = g.value === o.v;
-                          const activeStyle = o.color
-                            ? { backgroundColor: o.color, color: "#fff", ...bc(o.color), fontWeight: 600 }
-                            : S.chipTrans;
-                          return (
-                            <button key={o.v} onClick={() => g.set(o.v)} style={{ ...S.chip, ...(on ? activeStyle : {}) }}>
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                                {o.color && <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: on ? "#fff" : o.color, flexShrink: 0 }} />}
-                                {o.txt}
-                              </span>
-                            </button>
-                          );
-                        })}
+                    <div key={g.key}>
+                      <div className="pw-glabel">{g.label}</div>
+                      <div className="pw-chips">
+                        {g.opts.map((o) => (
+                          <button key={o.v} onClick={() => g.set(o.v)} aria-pressed={g.value === o.v}
+                            className={"pw-chip " + (o.color || "") + (g.value === o.v ? " on" : "")}>
+                            {o.color && <span className="pw-swatch" />}
+                            {o.txt}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ))}
+                  <div className="pw-glabel">Orden</div>
+                  <div className="pw-chips">
+                    {[["az", "A–Z"], ["cat", "Por categoría"]].map(([v, txt]) => (
+                      <button key={v} onClick={() => setOrden(v)} aria-pressed={orden === v}
+                        className={"pw-chip" + (orden === v ? " on" : "")}>{txt}</button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div role="list">
-                {lista.map((x) => {
-                  const r = recomendar(x);
-                  return (
-                    <button key={x.n} className="row" role="listitem" onClick={() => { setSel(x); window.scrollTo({ top: 0 }); }} style={S.row}>
-                      <span style={{ ...S.dot, backgroundColor: r.springKey === "rojo" ? "var(--red)" : "var(--blue)" }} aria-hidden="true" />
-                      <span style={{ flex: 1, textAlign: "left" }}>
-                        <span style={S.rowName}>{x.n}</span>
-                        <span style={S.rowMeta}>{CATS[x.cat].label} · {x.y} · {WHEEL_LABELS[x.w || CATS[x.cat].w]}</span>
-                      </span>
-                      <span style={S.rowArrow}>›</span>
-                    </button>
-                  );
-                })}
+              <div className="pw-rows" role="list">
+                {orden === "az"
+                  ? lista.map((x) => renderRow(x, true))
+                  : cats.map((k) => {
+                      const grupo = lista.filter((x) => x.cat === k);
+                      if (!grupo.length) return null;
+                      return (
+                        <React.Fragment key={k}>
+                          <div className="pw-group">{CATS[k].label}<span>{grupo.length}</span></div>
+                          {grupo.map((x) => renderRow(x, false))}
+                        </React.Fragment>
+                      );
+                    })}
                 {lista.length === 0 && (
-                  <div style={{ color: "var(--text-3)", padding: 24, textAlign: "center", fontSize: 14 }}>
-                    Ningún carro coincide. Prueba otra búsqueda o cambia de categoría.
+                  <div className="pw-none">
+                    Ningún carro coincide{q.trim() ? ` con “${q.trim()}”` : ""}.
+                    {(totalFiltros > 0 || q) && (
+                      <div>
+                        <button className="pw-link" onClick={() => { limpiarFiltros(); setQ(""); }}>Quitar búsqueda y filtros</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              <footer style={S.footer}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 14 }}>
-                  <span style={{ ...S.dot, backgroundColor: "var(--blue)" }} /> azul = resorte blando
-                </span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ ...S.dot, backgroundColor: "var(--red)" }} /> rojo = resorte duro
-                </span>
-                <div style={{ marginTop: 10 }}>
-                  Listas actualizadas a junio 2026 · iRacing 2026 S3 · AC EVO v0.9 · AC Rally v0.4 · AMS2 v1.6 (por clases)
+              <footer className="pw-footer">
+                <div className="legend">
+                  <span className="azul"><i className="pw-swatch" /> azul = resorte blando</span>
+                  <span className="rojo"><i className="pw-swatch" /> rojo = resorte duro</span>
                 </div>
+                Catálogos: {SIMS.map((s) => `${s.name} ${s.v}`).join(" · ")} (AMS2 por clases)
               </footer>
-            </>
+            </div>
+
+            <section className="pw-detail" ref={detailRef}>
+              {sel && rec ? (
+                <div className="pw-detail-inner">
+                  <button onClick={closeCar} className="pw-link pw-back">← Lista de carros</button>
+                  <div className="pw-eyebrow">{simActual.name} · {CATS[sel.cat].label} · {sel.y}</div>
+                  <h2 className="pw-title">{sel.n}</h2>
+                  <p className={"pw-desc" + (descAbierta ? "" : " clamp")}>{sel.i}</p>
+                  {sel.i.length > 240 && (
+                    <button onClick={() => setDescAbierta((o) => !o)} aria-expanded={descAbierta} className="pw-link">
+                      {descAbierta ? "ver menos" : "ver más"}
+                    </button>
+                  )}
+
+                  {/* Lo que hay que montar, de un vistazo; el porqué va abajo */}
+                  <div className="pw-summary">
+                    <div className="pw-tile">
+                      <div className="ico"><WheelIcon tipo={rec.wheelKey} activo /></div>
+                      <div className="txt">
+                        <div className="pw-glabel">Volante</div>
+                        <div className="val">{WHEEL_LABELS[rec.wheelKey]}</div>
+                        <div className="hint">{rec.wheel.nombre}</div>
+                      </div>
+                    </div>
+                    <div className="pw-tile">
+                      <div className="ico"><ShiftIcon t={sel.t} /></div>
+                      <div className="txt">
+                        <div className="pw-glabel">Cambio</div>
+                        <div className="val">{SHIFT_SHORT[sel.t][0]}</div>
+                        <div className="hint">{SHIFT_SHORT[sel.t][1]}</div>
+                      </div>
+                    </div>
+                    <div className={"pw-tile " + rec.springKey}>
+                      <div className="ico"><Spring color={springColor} dura={rec.springKey === "rojo"} size={0.42} /></div>
+                      <div className="txt">
+                        <div className="pw-glabel">Freno</div>
+                        <div className="val">Resorte {rec.springKey}</div>
+                        <div className="hint">
+                          {userKg ? `Tu valor ${userKg} kg` : `~${rec.kg} kg`} · tie-rod {rec.brake.tie.toLowerCase()} · preload {rec.brake.pre.toLowerCase()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pw-card">
+                    <div className="pw-glabel">Volante</div>
+                    <div className="pw-wheels">
+                      {["redondo", "gt3", "neo", "formula", "podium"].map((w) => (
+                        <div key={w} className={"pw-wheel" + (rec.wheelKey === w ? " on" : "")}>
+                          <WheelIcon tipo={w} activo={rec.wheelKey === w} />
+                          <div style={{ marginTop: 3 }}>{WHEEL_LABELS[w]}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pw-maintxt">{rec.wheel.nombre}</div>
+                    <div className="pw-subtxt">{rec.wheel.porque}</div>
+                  </div>
+
+                  <div className="pw-card">
+                    <div className="pw-glabel">Cambio</div>
+                    <div className="pw-maintxt">{rec.shift.txt}</div>
+                    {rec.shift.sub && <div className="pw-subtxt">{rec.shift.sub}</div>}
+                  </div>
+
+                  {gb && (
+                    <div className="pw-card">
+                      <div className="pw-glabel">Caja de cambios · iRacing</div>
+                      <div className="pw-maintxt">{gb.t}</div>
+                      <dl className="pw-dl">
+                        <dt>Accionamiento</dt><dd>{gb.lever}</dd>
+                        <dt>Subir</dt><dd>{gb.up}</dd>
+                        <dt>Bajar</dt><dd>{gb.down}</dd>
+                      </dl>
+                      {gb.extra && <div className="pw-subtxt" style={{ marginTop: 8, fontStyle: "italic" }}>{gb.extra}</div>}
+                    </div>
+                  )}
+
+                  <div className={"pw-card " + rec.springKey}>
+                    <div className="pw-brakehead">
+                      <Spring color={springColor} dura={rec.springKey === "rojo"} size={0.5} />
+                      <div>
+                        <div className="pw-glabel">Freno VRS · {rec.brake.nombre}</div>
+                        <div className="pw-maintxt">{rec.spring.nombre}</div>
+                      </div>
+                    </div>
+                    <div className="pw-gauges">
+                      <MiniGauge
+                        title="TIE-ROD"
+                        stops={TIE_STOPS}
+                        range={TIE_LEVELS[rec.brake.tie]}
+                        color={springColor}
+                        values={[
+                          tieMm.corta ? `${tieMm.corta} mm` : null,
+                          `${TIE_STOCK_MM} mm`,
+                          tieMm.larga ? `${tieMm.larga} mm` : null,
+                        ]}
+                        onEdit={openTieModal}
+                      />
+                      <MiniGauge
+                        title="PRELOAD"
+                        stops={PRE_STOPS}
+                        range={PRE_LEVELS[rec.brake.pre]}
+                        color={springColor}
+                        values={PRE_STOPS.map((_, i) => {
+                          const [plo, phi] = PRE_LEVELS[rec.brake.pre];
+                          if (i < plo || i > phi) return undefined;
+                          const v = preMm[preKeyOf(rec, i)];
+                          return v ? `${v} mm` : null;
+                        })}
+                        onEdit={openPreModal}
+                      />
+                    </div>
+                    <div className="pw-maintxt" style={{ fontSize: 14.5 }}>Fuerza al 100 %: ~{rec.kg} kg</div>
+                    <PressureBar range={rec.kg} color={springColor} marker={userKg} />
+                    <div className="pw-kgrow">
+                      <label htmlFor="kg-real">Tu calibración</label>
+                      <input
+                        id="kg-real"
+                        className="pw-input"
+                        type="number" inputMode="numeric" min="1" max="300"
+                        placeholder="kg"
+                        value={userKg || ""}
+                        onChange={e => handleKgChange(e.target.value)}
+                      />
+                      <span>kg</span>
+                      {userKg && <strong>{kgEstado}</strong>}
+                      {userKg && <button onClick={() => handleKgChange("")} className="pw-link muted">limpiar</button>}
+                    </div>
+                    <div className="pw-subtxt">{rec.brake.porque} Calibra el 100 % de freno en el software de VRS a esa fuerza con tu postura real de conducción.</div>
+                  </div>
+
+                  {rec.notas.length > 0 && (
+                    <div className="pw-card">
+                      <div className="pw-glabel">Notas de boxes</div>
+                      {rec.notas.map((nt, i) => <div key={i} className="pw-note">{nt}</div>)}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="pw-empty">
+                  <div className="pw-flag" aria-hidden="true">
+                    {Array.from({ length: 8 }).map((_, i) => <span key={i} />)}
+                  </div>
+                  <div className="pw-title">Elige un carro</div>
+                  <p>Te digo qué volante montar, cómo dejar la palanca y qué resorte de freno usar.</p>
+                </div>
+              )}
+            </section>
+          </main>
+
+          {syncModal && (
+            <Modal title="Sincronización" onClose={() => { setSyncModal(false); setCodeInput(""); }} width={400}>
+              <p className="pw-help" style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span className={"pw-led " + syncEstado} aria-hidden="true" />
+                <span>{SYNC_TXT[syncEstado]}</span>
+              </p>
+              <div className="pw-glabel">Tu código</div>
+              <div className="pw-code">
+                <code>{syncCode}</code>
+                <button onClick={copiarCodigo} className="pw-btn">{copiado ? "✓ Copiado" : "Copiar"}</button>
+              </div>
+              <p className="pw-help">
+                Escribe este código en otro dispositivo para ver ahí tus kg, tie-rod, preload y setup. No hay cuenta ni contraseña: quien tenga el código puede leer y cambiar esos valores.
+              </p>
+              <div className="pw-glabel">Usar el código de otro dispositivo</div>
+              <div className="pw-field" style={{ marginBottom: 0 }}>
+                <input
+                  className="pw-input"
+                  style={{ width: 150, letterSpacing: 1 }}
+                  value={codeInput}
+                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                  onKeyDown={e => e.key === "Enter" && applyCode()}
+                  placeholder="XKPQ-847"
+                  maxLength={9}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  aria-label="Código de sincronización"
+                />
+                <button onClick={applyCode} disabled={codeInput.trim().length < 4} className="pw-btn primary" style={codeInput.trim().length < 4 ? { opacity: 0.45, cursor: "default" } : null}>Usar</button>
+              </div>
+            </Modal>
+          )}
+
+          {themeOpen && (
+            <Modal title="Tema" onClose={() => setThemeOpen(false)} width={620}>
+              <div className="pw-themes" role="radiogroup" aria-label="Tema">
+                {window.PW_THEMES.map((th) => (
+                  <button key={th.key} role="radio" aria-checked={theme === th.key} onClick={() => setTheme(th.key)} className="pw-theme">
+                    <span aria-hidden="true" className="prev" style={{ backgroundColor: th.t.bg, boxShadow: `inset 0 0 0 1px ${th.t.line}` }}>
+                      <i style={{ left: 6, right: 6, top: 6, height: 12, backgroundColor: th.t.surface, boxShadow: `inset 0 0 0 1px ${th.t.line}` }} />
+                      <i style={{ left: 6, bottom: 6, width: "42%", height: 7, backgroundColor: th.t.accent }} />
+                      <i style={{ right: 6, bottom: 6, width: "28%", height: 7, backgroundColor: th.t.text }} />
+                    </span>
+                    {th.name}
+                  </button>
+                ))}
+              </div>
+            </Modal>
           )}
 
           {setupModal && (
-            <div
-              onClick={() => setSetupModal(false)}
-              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Mi setup actual"
+            <Modal
+              title="Mi setup actual"
+              onClose={() => setSetupModal(false)}
+              footer={<>
+                <button onClick={() => setSetupModal(false)} className="pw-btn">Cancelar</button>
+                <button onClick={saveSetup} className="pw-btn primary">Guardar</button>
+              </>}
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 380 }}>
-                <div style={{ ...S.blockLabel, marginBottom: 2 }}>MI SETUP ACTUAL</div>
-                <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
-                  Lo que tienes montado ahora en los pedales. Se guarda y se sincroniza, y te permite filtrar los carros de cualquier simulador por esta configuración. Puedes cambiarlo cuando quieras.
-                </div>
-                {[
-                  { k: "spring", label: "RESORTE", opts: SETUP_SPRINGS.map((v) => ({ v, txt: v === "rojo" ? "Rojo (duro)" : "Azul (blando)", color: v === "rojo" ? "var(--red)" : "var(--blue)" })) },
-                  { k: "tie", label: "TIE-ROD", opts: TIE_STOPS.map((v) => ({ v, txt: v })) },
-                  { k: "pre", label: "PRELOAD", opts: PRE_STOPS.map((v) => ({ v, txt: v })) },
-                ].map((g) => (
-                  <div key={g.k} style={{ marginBottom: 12 }}>
-                    <div style={S.filterGroupLabel}>{g.label}</div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {[{ v: undefined, txt: "Sin definir" }, ...g.opts].map((o) => {
-                        const on = setupDraft[g.k] === o.v;
-                        const activeStyle = o.color
-                          ? { backgroundColor: o.color, color: "#fff", ...bc(o.color), fontWeight: 600 }
-                          : S.chipTrans;
-                        return (
-                          <button
-                            key={o.txt}
-                            aria-pressed={on}
-                            onClick={() => setSetupDraft((prev) => {
-                              const next = { ...prev };
-                              if (o.v === undefined) delete next[g.k]; else next[g.k] = o.v;
-                              return next;
-                            })}
-                            style={{ ...S.chip, ...(on ? activeStyle : {}) }}
-                          >
-                            {o.txt}
-                          </button>
-                        );
-                      })}
-                    </div>
+              <p className="pw-help">
+                Lo que tienes montado ahora en los pedales. Se guarda y se sincroniza, y te permite filtrar los carros de cualquier simulador por esta configuración. Puedes cambiarlo cuando quieras.
+              </p>
+              {[
+                { k: "spring", label: "Resorte", opts: SETUP_SPRINGS.map((v) => ({ v, txt: v === "rojo" ? "Rojo (duro)" : "Azul (blando)", color: v })) },
+                { k: "tie", label: "Tie-rod", opts: TIE_STOPS.map((v) => ({ v, txt: v })) },
+                { k: "pre", label: "Preload", opts: PRE_STOPS.map((v) => ({ v, txt: v })) },
+              ].map((g) => (
+                <div key={g.k}>
+                  <div className="pw-glabel">{g.label}</div>
+                  <div className="pw-chips">
+                    {[{ v: undefined, txt: "Sin definir" }, ...g.opts].map((o) => {
+                      const on = setupDraft[g.k] === o.v;
+                      return (
+                        <button
+                          key={o.txt}
+                          aria-pressed={on}
+                          onClick={() => setSetupDraft((prev) => {
+                            const next = { ...prev };
+                            if (o.v === undefined) delete next[g.k]; else next[g.k] = o.v;
+                            return next;
+                          })}
+                          className={"pw-chip " + (o.color || "") + (on ? " on" : "")}
+                        >
+                          {o.color && <span className="pw-swatch" />}
+                          {o.txt}
+                        </button>
+                      );
+                    })}
                   </div>
-                ))}
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                  <button onClick={() => setSetupModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveSetup} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
                 </div>
-              </div>
-            </div>
+              ))}
+            </Modal>
           )}
 
           {tieModal && (
-            <div
-              onClick={() => setTieModal(false)}
-              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Modificar longitudes de tie-rod"
+            <Modal
+              title="Tie-rod · longitudes"
+              onClose={() => setTieModal(false)}
+              width={340}
+              footer={<>
+                <button onClick={() => setTieModal(false)} className="pw-btn">Cancelar</button>
+                <button onClick={saveTieMm} className="pw-btn primary">Guardar</button>
+              </>}
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 320 }}>
-                <div style={{ ...S.blockLabel, marginBottom: 2 }}>TIE-ROD · LONGITUDES</div>
-                <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
-                  Stock es fijo ({TIE_STOCK_MM} mm), no se puede cambiar. Corta y larga son tus longitudes medidas en el pedal: aplican a todos los carros y simuladores.
+              <p className="pw-help">
+                Stock es fijo ({TIE_STOCK_MM} mm), no se puede cambiar. Corta y larga son tus longitudes medidas en el pedal: aplican a todos los carros y simuladores.
+              </p>
+              {[
+                ["corta", "Corta"],
+                ["stock", "Stock"],
+                ["larga", "Larga"],
+              ].map(([k, label]) => (
+                <div key={k} className="pw-field">
+                  <span className="lbl">{label}</span>
+                  {k === "stock" ? (
+                    <span className="unit">{TIE_STOCK_MM} mm · fijo</span>
+                  ) : (
+                    <>
+                      <input
+                        className="pw-input"
+                        type="number" inputMode="numeric" min="1" max="200"
+                        placeholder="mm"
+                        aria-label={`Tie-rod ${label.toLowerCase()} en milímetros`}
+                        value={tieDraft[k]}
+                        onChange={(e) => setTieDraft((prev) => ({ ...prev, [k]: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && saveTieMm()}
+                        autoFocus={k === "corta"}
+                      />
+                      <span className="unit">mm</span>
+                    </>
+                  )}
                 </div>
-                {[
-                  ["corta", "Corta"],
-                  ["stock", "Stock"],
-                  ["larga", "Larga"],
-                ].map(([k, label]) => (
-                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ width: 52, fontSize: 13, color: "var(--text-2)" }}>{label}</span>
-                    {k === "stock" ? (
-                      <span style={{ fontSize: 13, color: "var(--muted)" }}>{TIE_STOCK_MM} mm · fijo</span>
-                    ) : (
-                      <>
-                        <input
-                          type="number" min="1" max="200"
-                          placeholder="mm"
-                          value={tieDraft[k]}
-                          onChange={(e) => setTieDraft((prev) => ({ ...prev, [k]: e.target.value }))}
-                          onKeyDown={(e) => e.key === "Enter" && saveTieMm()}
-                          autoFocus={k === "corta"}
-                          style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
-                        />
-                        <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
-                      </>
-                    )}
-                  </div>
-                ))}
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                  <button onClick={() => setTieModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={saveTieMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
-                </div>
-              </div>
-            </div>
+              ))}
+            </Modal>
           )}
 
           {preModal && rec && (
-            <div
-              onClick={() => setPreModal(false)}
-              style={{ position: "fixed", inset: 0, backgroundColor: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Modificar preload en milímetros"
+            <Modal
+              title="Preload · milímetros"
+              onClose={() => setPreModal(false)}
+              width={360}
+              footer={<>
+                <button onClick={() => setPreModal(false)} className="pw-btn">Cancelar</button>
+                <button onClick={savePreMm} className="pw-btn primary">Guardar</button>
+              </>}
             >
-              <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "18px 20px", width: "100%", maxWidth: 340 }}>
-                <div style={{ ...S.blockLabel, marginBottom: 2 }}>PRELOAD · MILÍMETROS</div>
-                <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.5, marginBottom: 14 }}>
-                  Valor para la combinación{" "}
-                  <strong style={{ color: rec.springKey === "rojo" ? "var(--red-text)" : "var(--blue-text)" }}>resorte {rec.springKey}</strong>
-                  {" · "}
-                  <strong style={{ color: "var(--text-2)" }}>tie-rod {rec.brake.tie.toLowerCase()}</strong>.
-                  Se guarda una sola vez y aplica a todos los carros que compartan esta combinación.
+              <p className={"pw-help " + rec.springKey}>
+                Valor para la combinación{" "}
+                <strong style={{ color: "var(--sct)" }}>resorte {rec.springKey}</strong>
+                {" · "}
+                <strong style={{ color: "var(--text-2)" }}>tie-rod {rec.brake.tie.toLowerCase()}</strong>.
+                Se guarda una sola vez y aplica a todos los carros que compartan esta combinación.
+              </p>
+              {preLevelsOf(rec).map((lvl) => (
+                <div key={lvl} className="pw-field">
+                  <span className="lbl">Preload {PRE_STOPS[lvl].toLowerCase()}</span>
+                  <input
+                    className="pw-input"
+                    type="number" inputMode="numeric" min="1" max="50"
+                    placeholder="mm"
+                    aria-label={`Preload ${PRE_STOPS[lvl].toLowerCase()} en milímetros`}
+                    value={preDraft[lvl] || ""}
+                    onChange={(e) => setPreDraft((prev) => ({ ...prev, [lvl]: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && savePreMm()}
+                    autoFocus={lvl === preLevelsOf(rec)[0]}
+                  />
+                  <span className="unit">mm</span>
                 </div>
-                {preLevelsOf(rec).map((lvl) => (
-                  <div key={lvl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ width: 84, fontSize: 13, color: "var(--text-2)" }}>Preload {PRE_STOPS[lvl]}</span>
-                    <input
-                      type="number" min="1" max="50"
-                      placeholder="mm"
-                      value={preDraft[lvl] || ""}
-                      onChange={(e) => setPreDraft((prev) => ({ ...prev, [lvl]: e.target.value }))}
-                      onKeyDown={(e) => e.key === "Enter" && savePreMm()}
-                      autoFocus={lvl === preLevelsOf(rec)[0]}
-                      style={{ width: 70, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 4, color: "var(--text)", padding: "5px 8px", fontSize: 14, fontFamily: "inherit" }}
-                    />
-                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
-                  </div>
-                ))}
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                  <button onClick={() => setPreModal(false)} style={{ ...S.chip, padding: "6px 14px" }}>Cancelar</button>
-                  <button onClick={savePreMm} style={{ ...S.chip, padding: "6px 14px", backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 }}>Guardar</button>
-                </div>
-              </div>
-            </div>
+              ))}
+            </Modal>
           )}
         </div>
       );
     }
-
-    // border-color es abreviada: en Safari, con var() y estilos que se alternan, no se repinta bien.
-    // Por eso el color del borde va siempre por lado (propiedades largas).
-    function bc(c) { return { borderTopColor: c, borderRightColor: c, borderBottomColor: c, borderLeftColor: c }; }
-
-    const S = {
-      root: { minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--text)", fontFamily: "'IBM Plex Sans', sans-serif", padding: "0 14px 40px", maxWidth: 760, margin: "0 auto" },
-      header: { padding: "22px 0 4px" },
-      flag: { display: "flex", width: 64, height: 8, borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), marginBottom: 10 },
-      flagSq: { flex: 1 },
-      h1: { fontFamily: "'Saira Condensed', sans-serif", fontWeight: 700, fontSize: 42, letterSpacing: 6, margin: 0, lineHeight: 1 },
-      sub: { color: "var(--text-3)", fontSize: 13, margin: "6px 0 0" },
-      tabs: { display: "flex", gap: 8, margin: "18px 0 14px" },
-      tab: { flex: 1, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, color: "var(--text)", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 0, fontFamily: "inherit" },
-      tabOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)") },
-      search: { width: "100%", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, color: "var(--text)", padding: "11px 14px", fontSize: 15, marginBottom: 10, fontFamily: "inherit" },
-      chip: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 999, color: "var(--text-2)", padding: "6px 13px", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit" },
-      chipOn: { backgroundColor: "var(--text)", color: "var(--bg)", ...bc("var(--text)"), fontWeight: 600 },
-      setupBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: "1px 1px 1px 3px", borderStyle: "solid", borderTopColor: "var(--line)", borderRightColor: "var(--line)", borderBottomColor: "var(--line)", borderLeftColor: "var(--accent)", borderRadius: 6, marginBottom: 8 },
-      filterBar: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, marginBottom: 8 },
-      filterToggle: { display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 6, color: "var(--text)", padding: "6px 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
-      filterToggleOn: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)") },
-      filterBadge: { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 17, height: 17, padding: "0 5px", borderRadius: 9, backgroundColor: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 700 },
-      filterPill: { display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "var(--line)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line-strong)"), borderRadius: 999, color: "var(--text)", padding: "3px 9px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
-      filterClear: { background: "none", border: "none", color: "var(--text-3)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit", flexShrink: 0 },
-      filterPanel: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: "12px 12px 2px", marginBottom: 10 },
-      filterGroupLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 11, letterSpacing: 2, color: "var(--text-3)", marginBottom: 5 },
-      chipTrans: { backgroundColor: "var(--accent)", color: "var(--on-accent)", ...bc("var(--accent)"), fontWeight: 600 },
-      row: { width: "100%", display: "flex", alignItems: "center", gap: 12, backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: "11px 14px", marginTop: 8, cursor: "pointer", color: "var(--text)", fontFamily: "inherit", transition: "background .15s" },
-      dot: { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 },
-      rowName: { display: "block", fontSize: 15, fontWeight: 500, lineHeight: 1.3 },
-      rowMeta: { display: "block", fontSize: 11.5, color: "var(--text-3)", marginTop: 2 },
-      rowArrow: { color: "var(--dim)", fontSize: 20 },
-      card: { backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 8, padding: "16px 16px 8px", marginBottom: 16 },
-      back: { background: "none", border: "none", color: "var(--accent)", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 10, fontFamily: "inherit" },
-      cardCat: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 13, letterSpacing: 2, color: "var(--accent)", textTransform: "uppercase" },
-      cardTitle: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 28, fontWeight: 700, margin: "2px 0 8px", lineHeight: 1.1 },
-      cardInfo: { color: "var(--text-2)", fontSize: 14, lineHeight: 1.55, margin: "0 0 16px" },
-      block: { borderTopWidth: 1, borderTopStyle: "solid", borderTopColor: "var(--line)", padding: "13px 0" },
-      blockLabel: { fontFamily: "'Saira Condensed', sans-serif", fontSize: 12, letterSpacing: 3, color: "var(--text-3)", marginBottom: 4 },
-      blockMain: { fontSize: 16, fontWeight: 600, marginBottom: 3 },
-      blockSub: { fontSize: 13, color: "var(--text-sub)", lineHeight: 1.5 },
-      themePanel: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8, marginTop: 10, padding: 10, maxHeight: 360, overflowY: "auto", backgroundColor: "var(--surface)", borderWidth: 1, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6 },
-      themeSwatch: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 6, background: "none", borderWidth: 2, borderStyle: "solid", ...bc("var(--line)"), borderRadius: 6, padding: 6, cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
-      themePreview: { position: "relative", display: "block", height: 44, borderRadius: 4, borderWidth: 1, borderStyle: "solid", overflow: "hidden" },
-      footer: { marginTop: 28, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 },
-    };
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>

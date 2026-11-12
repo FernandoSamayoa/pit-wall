@@ -18,8 +18,8 @@ presión de freno (kg) entre dispositivos, vía Firebase.
 ## Stack técnico
 
 - **Sin build step.** Todo el frontend vive en un único [`index.html`](index.html):
-  HTML, estilos inline (objetos JS) y un componente React, todo en un mismo
-  archivo.
+  HTML, CSS (un `<style>` con clases `pw-*`) y un componente React, todo en
+  un mismo archivo.
 - **React 18** y **Babel Standalone**, cargados desde CDN (`unpkg`) directo en
   el `<head>`. El JSX se transpila **en el navegador**, en tiempo real, dentro
   de un `<script type="text/babel">` — no hay Webpack/Vite ni `node_modules`.
