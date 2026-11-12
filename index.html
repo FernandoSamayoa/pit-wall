@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
   <!-- Versiones exactas: "react@18" responde con una redirección y no se puede cachear para siempre -->
-  <script defer crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-  <script defer crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script defer crossorigin integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script defer crossorigin integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <!-- Babel solo se usa al abrir este archivo tal cual (desarrollo). El build de
        producción (build.mjs) quita esta línea y compila el JSX de abajo. -->
   <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
@@ -356,12 +356,20 @@
 
     // El SDK no va en el <head>: se descarga después del primer pintado,
     // porque la app funciona completa sin él y solo lo usa el sync.
+    // Los hashes (SRI) hacen que el navegador rechace el script si el CDN
+    // sirve algo distinto. Al cambiar de versión hay que recalcularlos:
+    //   curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A
     const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/9.22.2/";
-    function cargarScript(src) {
+    const FIREBASE_SRI = {
+      "firebase-app-compat.js": "sha384-HLJUgAQ2oo6rdMC4QW+Oz2qQfPOtu/lzncKG4sZiq8+2W9uOa3K0b3UGpckKqv7H",
+      "firebase-firestore-compat.js": "sha384-G9MgwUuBv7ryBpFPAHd7ybMYwO0IaNXfsJLTyYg/z+blPyNxk/fNC2uVMVur+wKW",
+    };
+    function cargarScript(src, integrity) {
       return new Promise((ok, err) => {
         const s = document.createElement("script");
         s.src = src;
         s.crossOrigin = "anonymous";
+        s.integrity = integrity;
         s.onload = ok;
         s.onerror = () => { s.remove(); err(new Error("No cargó " + src)); };
         document.head.appendChild(s);
@@ -369,7 +377,7 @@
     }
     // Se puede llamar varias veces (reintentos): lo que ya cargó no se repite
     function cargarFirebase() {
-      const paso = (archivo, listo) => listo() ? Promise.resolve() : cargarScript(FIREBASE_SDK + archivo);
+      const paso = (archivo, listo) => listo() ? Promise.resolve() : cargarScript(FIREBASE_SDK + archivo, FIREBASE_SRI[archivo]);
       return paso("firebase-app-compat.js", () => !!window.firebase)
         .then(() => paso("firebase-firestore-compat.js", () => !!window.firebase.firestore));
     }
@@ -423,6 +431,13 @@
     }
     function guardarBase(code, data) {
       try { localStorage.setItem("pitwall_sync_base", JSON.stringify({ code, data })); } catch {}
+    }
+
+    // El código es el id del documento en Firestore: solo letras, números y
+    // guion. Una "/" u otro carácter raro haría fallar la referencia al
+    // documento y dejaría la app en blanco.
+    function limpiarCodigo(c) {
+      return String(c || "").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 9);
     }
 
     function genSyncCode() {
@@ -1392,8 +1407,8 @@
       const [sel, setSel] = useState(inicial ? inicial.car : null);
       const [descAbierta, setDescAbierta] = useState(false);
       const [syncCode, setSyncCode] = useState(() => {
-        let c = localStorage.getItem("pitwall_sync_code");
-        if (!c) { c = genSyncCode(); localStorage.setItem("pitwall_sync_code", c); }
+        let c = limpiarCodigo(localStorage.getItem("pitwall_sync_code"));
+        if (c.length < 4) { c = genSyncCode(); localStorage.setItem("pitwall_sync_code", c); }
         return c;
       });
       const [codeInput, setCodeInput] = useState("");
@@ -1615,7 +1630,7 @@
       };
 
       const applyCode = () => {
-        const c = codeInput.trim().toUpperCase();
+        const c = limpiarCodigo(codeInput);
         if (c.length < 4) return;
         localStorage.setItem("pitwall_sync_code", c);
         setSyncCode(c);
@@ -2178,7 +2193,7 @@
                   className="pw-input"
                   style={{ width: 150, letterSpacing: 1 }}
                   value={codeInput}
-                  onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                  onChange={e => setCodeInput(limpiarCodigo(e.target.value))}
                   onKeyDown={e => e.key === "Enter" && applyCode()}
                   placeholder="XKPQ-847"
                   maxLength={9}
