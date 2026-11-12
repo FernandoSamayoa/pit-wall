@@ -1,5 +1,5 @@
 // Service worker de PIT WALL: guarda la app para abrirla rápido y sin conexión.
-// build.mjs reemplaza __BUILD__ y __APP__ en cada despliegue, así cada
+// build.mjs rellena la versión y la ruta del JS en cada despliegue, así cada
 // versión estrena su propia caché y la anterior se borra al activarse.
 const CACHE = "pitwall-__BUILD__";
 // Scripts y fuentes de CDN: sus URLs llevan versión, no cambian nunca, y por

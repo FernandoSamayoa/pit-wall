@@ -39,8 +39,8 @@ const salida = (
 ).replace(BABEL, "");
 
 const sw = (await readFile("sw.js", "utf8"))
-  .replace("__BUILD__", hash(salida))
-  .replace("__APP__", app);
+  .replaceAll("__BUILD__", hash(salida))
+  .replaceAll("__APP__", app);
 
 await rm(OUT, { recursive: true, force: true });
 await mkdir(`${OUT}/assets`, { recursive: true });
