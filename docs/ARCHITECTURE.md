@@ -278,6 +278,15 @@ final de `gearboxOf`).
   compartan valor aunque usen el mismo resorte o el mismo rango de kg. La
   clave de `preMm` es la combinación física `resorte|tieRod|nivel`, común a
   todos los sims: dos carros con la misma combinación comparten el valor.
+- **Código de sync**: pasa siempre por `limpiarCodigo()` (mayúsculas,
+  letras, números y guion; máximo 9 caracteres), porque es el id del
+  documento y un carácter como `/` rompería la referencia. Las reglas de
+  Firestore deberían exigir el mismo formato.
+- **Integridad de los scripts de CDN**: React (en el `<head>`) y Firebase
+  (`FIREBASE_SRI`) llevan hash SRI. Al cambiar de versión hay que
+  recalcularlos con
+  `curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A`; con
+  un hash viejo el navegador rechaza el script.
 - **Config de Firebase**: no está hardcodeada en `index.html`. Se pide en
   runtime a `/api/config` ([`api/config.js`](../api/config.js)), que lee
   `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN` y `FIREBASE_PROJECT_ID` de las
