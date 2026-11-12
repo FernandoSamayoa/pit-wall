@@ -13,9 +13,12 @@ bloque y cómo tocarlo sin romper el resto.
 
 De arriba a abajo, `index.html` tiene estas piezas, en este orden:
 
-1. **`<head>`**: carga React 18, ReactDOM, el SDK "compat" de Firebase
-   (`firebase-app-compat.js` + `firebase-firestore-compat.js`) y Babel
-   Standalone, todos desde CDN. También el manifest de PWA y metatags.
+1. **`<head>`**: carga React 18, ReactDOM (builds de producción), el SDK
+   "compat" de Firebase (`firebase-app-compat.js` +
+   `firebase-firestore-compat.js`) y Babel Standalone, todos desde CDN.
+   También las fuentes, el manifest de PWA, metatags, el `<style>` con
+   **todo el CSS de la app** (clases `pw-*`) y el script de temas
+   (`PW_THEMES`).
 2. **Bootstrap de Firebase y `genSyncCode()`**: variable `CONFIGS` (se llena
    más tarde con la referencia a la colección de Firestore) y el generador
    del código de sincronización tipo `AB12-345`.
@@ -31,14 +34,36 @@ De arriba a abajo, `index.html` tiene estas piezas, en este orden:
    preload, rango de kg y explicación), agrupados por tipo de asistencia.
 9. **`recomendar(car)`**: la función central. Devuelve `{ wheel, wheelKey,
    spring, springKey, brake, brakeId, shift, notas, kg }` para un carro dado.
-10. **Componentes de presentación**: `PressureBar`, `Spring` (SVG del
-    resorte), `WheelIcon` (SVG del aro), y `WHEEL_LABELS`.
-11. **`App()`**: el componente principal — estado, efectos (Firebase, sync,
-    localStorage) y todo el render.
-12. **`S`**: diccionario de estilos inline reutilizados en el JSX (no hay
-    CSS externo ni Tailwind; solo un `<style>` chico dentro del JSX para el
-    `@import` de fuentes, el scrollbar y un par de media queries).
+10. **Componentes de presentación**: `PressureBar`, `MiniGauge`, `Spring`
+    (SVG del resorte), `WheelIcon` (SVG del aro), `WHEEL_LABELS`,
+    `ShiftIcon`, `Ico` y `Modal` (ventana que se cierra con Escape, con la ×
+    o tocando fuera).
+11. **`SIMS`**: la lista de simuladores/pestañas (`k`, nombre, versión y
+    array de carros). Es la única fuente de las versiones que se muestran
+    en las pestañas y en el pie de la lista.
+12. **`App()`**: el componente principal — estado, efectos (Firebase, sync,
+    localStorage, historial) y todo el render.
 13. **Última línea**: `ReactDOM.createRoot(...).render(<App />)`.
+
+### Estilos
+
+No hay CSS externo ni Tailwind: todo vive en el `<style>` del `<head>`, con
+clases `pw-*` y los colores siempre como variables del tema. Las clases
+`.rojo` / `.azul` exponen el color del resorte como `--sc` (relleno) y
+`--sct` (texto), así un mismo componente se pinta de uno u otro color con
+solo cambiar la clase.
+
+Los estilos inline quedan solo para valores calculados (posiciones de los
+gauges, colores literales de la vista previa de temas). En esos casos
+**no usar abreviadas con `var()`** (`background`, `border`, `borderColor`):
+Safari deja de repintarlas cuando React las alterna. Usar `backgroundColor`
+y propiedades por lado, o mejor una clase.
+
+El layout tiene dos modos, decididos por CSS (`.pw-main` + `.has-sel`):
+
+- **Menos de 1000 px**: se ve la lista **o** la ficha, nunca las dos.
+- **1000 px o más**: lista a la izquierda y ficha a la derecha, cada una
+  con su propio scroll (la página en sí no se desplaza).
 
 ## 2. Modelo de datos de un carro
 
@@ -159,10 +184,14 @@ final de `gearboxOf`).
 |---|---|
 | `sim` | Pestaña activa (`"ir" \| "ac" \| "acr" \| "ams"`). |
 | `cat`, `trans`, `spring`, `tie`, `pre` | Filtros activos de categoría / transmisión / resorte / tie-rod / preload. Los de tie-rod y preload comparan contra el rango del perfil de freno (`TIE_LEVELS` / `PRE_LEVELS`): un perfil con rango como "0 a leve" coincide con los filtros 0 y Leve. |
+| `orden` | Orden de la lista: `"az"` (alfabético) o `"cat"` (agrupada por categoría, en el orden de `CATS`). |
+| `filtrosAbiertos` | Si el panel de filtros está desplegado. |
 | `q` | Texto de búsqueda. |
-| `sel` | Carro seleccionado (si hay uno, se muestra la ficha en vez de la lista). |
+| `sel` | Carro seleccionado. También vive en el historial del navegador (`history.state = { pw: "car", sim, n }`): "atrás" vuelve a la lista y recargar conserva la ficha. Abrirlo y cerrarlo pasa siempre por `selectCar()` / `closeCar()`. |
+| `descAbierta` | Si la descripción del carro se muestra completa (por defecto, 3 líneas). |
 | `syncCode` | Código de 8 caracteres para sincronizar entre dispositivos; se genera una vez y se persiste en `localStorage`. |
-| `codeInput`, `showCodeInput` | UI para escribir un código de otro dispositivo. |
+| `syncModal`, `codeInput`, `copiado` | Ventana de sincronización: el código propio, el aviso de "copiado" y el campo para escribir el código de otro dispositivo. |
+| `theme`, `themeOpen` | Tema activo y visibilidad de la ventana de temas. |
 | `syncing`, `firebaseReady` | Estado de la sincronización con Firestore. |
 | `customKg` | Mapa `"sim:perfilDeFreno" -> valorEnKg` con los valores reales que el usuario ingresó (p. ej. `"ir:gt3": 92`). |
 | `tieMm` | `{ corta?, larga? }` en mm: longitudes de tie-rod del usuario, **globales** (un solo valor para todos los carros y sims). El stock es la constante `TIE_STOCK_MM` (43 mm) y nunca cambia. |
@@ -199,13 +228,19 @@ final de `gearboxOf`).
 
 ### Render
 
-- Si `sel` tiene un carro: muestra la ficha (`S.card`) con bloques de
-  VOLANTE, CAMBIO, CAJA DE CAMBIOS (solo iRacing), FRENO VRS (con el input
-  de kg reales y la barra de presión) y NOTAS DE BOXES.
-- Si no: muestra la barra "MI SETUP" (resumen de `miSetup`, botón
-  editar/configurar y el toggle "Filtrar por mi setup"), buscador, chips de
-  categoría/transmisión/resorte/tie-rod/preload y la lista de carros
-  filtrada, con un footer fijo de leyenda.
+- **Cabecera**: marca, pestañas de simulador (`SIMS`) y los botones "Sync"
+  y "Tema", que abren sus ventanas.
+- **Lista** (`.pw-list`): barra fija con el buscador (`/` lo enfoca), el
+  botón "Filtros" y una fila con el toggle "★ Mi setup", los filtros
+  activos como píldoras y el conteo. El panel de filtros trae el resumen de
+  `miSetup`, los chips de categoría/cambio/resorte/tie-rod/preload y el
+  orden. Cada fila muestra el color del resorte, el nombre y el tipo de
+  cambio.
+- **Ficha** (`.pw-detail`): título y descripción, tres mosaicos de resumen
+  (volante, cambio, freno) y debajo las tarjetas con el detalle: VOLANTE,
+  CAMBIO, CAJA DE CAMBIOS (solo iRacing), FRENO VRS (gauges, barra de
+  presión e input de kg reales) y NOTAS DE BOXES. Sin carro elegido, en
+  escritorio muestra un estado vacío.
 
 ## 7. Sincronización (Firebase) {#sincronización-firebase}
 
@@ -291,25 +326,17 @@ salvo que los sobreescriban individualmente.
 
 1. Creá el array de carros, por ejemplo `const RFACTOR2 = [ ... ];`, con el
    mismo formato que los otros (usando `c(...)`).
-2. En `App()`, sumá la pestaña a la lista de tabs:
+2. Sumá una entrada a `SIMS`; con eso aparecen la pestaña, el catálogo y
+   la versión en el pie:
 
    ```js
-   [["ir", "iRacing", "2026 S3"], ["ac", "AC EVO", "v0.8"],
-    ["acr", "AC Rally", "v0.4"], ["ams", "AMS2", "v1.6"],
-    ["rf2", "rFactor 2", "vX.Y"]].map(...)
+   { k: "rf2", name: "rFactor 2", v: "vX.Y", data: RFACTOR2 },
    ```
 
-3. Extendé la resolución de `data`:
+   Para actualizar la versión de un simulador existente, cambiá su `v` ahí
+   mismo.
 
-   ```js
-   const data = sim === "ir" ? IRACING
-     : sim === "ac" ? ACEVO
-     : sim === "acr" ? ACRALLY
-     : sim === "ams" ? AMS2
-     : RFACTOR2;
-   ```
-
-4. El bloque "CAJA DE CAMBIOS" solo se renderiza si `sim === "ir"`; dejalo
+3. El bloque "CAJA DE CAMBIOS" solo se renderiza si `sim === "ir"`; dejalo
    así salvo que el simulador nuevo también necesite ese nivel de detalle
    (en ese caso, habría que generalizar `gearboxOf`/`GB_MAP` para que
    dependan también de `sim`, hoy asumen iRacing).
